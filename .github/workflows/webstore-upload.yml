@@ -1,30 +1,30 @@
-name: Publish to Chrome Web Store
-on:
-  workflow_dispatch:
-  push:
-    tags:
-      - "v*"
-jobs:
-  cws-publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Zip extension
-        run: |
-          cd extension
-          zip -r ../td-debugger-mv3.zip .
-          cd ..
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install CLI
-        run: npm install -g chrome-webstore-upload-cli@3
-      - name: Upload & Publish
-        env:
-          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
-        run: |
-          chrome-webstore-upload upload             --source td-debugger-mv3.zip             --extension-id "$EXTENSION_ID"             --client-id "$CLIENT_ID"             --client-secret "$CLIENT_SECRET"             --refresh-token "$REFRESH_TOKEN"
-          chrome-webstore-upload publish             --extension-id "$EXTENSION_ID"             --client-id "$CLIENT_ID"             --client-secret "$CLIENT_SECRET"             --refresh-token "$REFRESH_TOKEN"             --publish-target trustedTesters
+# name: Publish to Chrome Web Store
+# on:
+#   workflow_dispatch:
+#   push:
+#     tags:
+#       - "v*"
+# jobs:
+#   cws-publish:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Zip extension
+#         run: |
+#           cd extension
+#           zip -r ../td-debugger-mv3.zip .
+#           cd ..
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+#       - name: Install CLI
+#         run: npm install -g chrome-webstore-upload-cli@3
+#       - name: Upload & Publish
+#         env:
+#           EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+#           CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+#           CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+#           REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+#         run: |
+#           chrome-webstore-upload upload             --source td-debugger-mv3.zip             --extension-id "$EXTENSION_ID"             --client-id "$CLIENT_ID"             --client-secret "$CLIENT_SECRET"             --refresh-token "$REFRESH_TOKEN"
+#           chrome-webstore-upload publish             --extension-id "$EXTENSION_ID"             --client-id "$CLIENT_ID"             --client-secret "$CLIENT_SECRET"             --refresh-token "$REFRESH_TOKEN"             --publish-target trustedTesters
