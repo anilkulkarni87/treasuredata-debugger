@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/><title>Treasure Data Debugger (MV3)</title><link rel="stylesheet" href="styles.css"/></head>
+<body>
+<header><h1>Treasure Data Debugger</h1><div class="controls">
+<label>TD Hosts (comma-separated): <input id="hosts" type="text" placeholder="in.treasuredata.com"/></label>
+<label title="Also show all non-TD requests (debug)"><input id="showNonTD" type="checkbox"/> Show non-TD</label>
+<label title="Include CORS preflight (OPTIONS)"><input id="showPreflight" type="checkbox"/> Show preflights</label>
+<span class="spacer"></span>
+<input id="filter" type="search" placeholder="Filter URL or payload…"/>
+<label title="Mask emails & tokens in payload"><input id="redact" type="checkbox"/> Redact PII</label>
+<button id="exportCsv" class="btn">Export CSV</button>
+<button id="settingsBtn" class="btn">Settings</button>
+<button id="importBtn" class="btn">Import</button>
+<button id="exportBtn" class="btn">Export</button>
+<button id="clearBtn" class="btn">Clear</button>
+<small>Open DevTools on the target page for capture. — <a href="#" id="openRedact">Redaction Rules</a></small>
+</div></header>
+<main><table id="reqTable"><thead><tr><th>#</th><th>Time</th><th>Method</th><th>URL</th><th>Status</th><th>Content-Type</th><th>Parsed Payload (key fields)</th></tr></thead><tbody id="reqBody"></tbody></table></main>
+<template id="rowTemplate"><tr><td class="idx"></td><td class="time"></td><td class="method"></td><td class="url"></td><td class="status"></td><td class="ctype"></td><td class="payload"></td></tr></template>
+<input id="importFile" type="file" accept=".json" style="display:none" />
+<div id="settingsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.3);">
+  <div style="background:#fff; width:700px; max-width:90vw; margin:10vh auto; padding:16px; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,.2)">
+    <h3 style="margin-top:0">Settings</h3>
+    <p style="margin:4px 0 8px 0">Customize keys of interest per extractor (e.g., <code>td-events</code>, <code>td-records</code>). Example:
+    <pre style="background:#f8f8f8; padding:8px; border:1px solid #eee; overflow:auto; max-height:140px">{ "td-events": { "keys": ["td_client_id","td_global_id","td_title","td_url"], "includeAll": true } }</pre></p>
+    <textarea id="settingsJson" style="width:100%; height:200px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;"></textarea>
+    <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end"><button id="settingsCancel" class="btn">Cancel</button><button id="settingsSave" class="btn">Save</button></div>
+  </div>
+</div>
+<div id="redactModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.3);">
+  <div style="background:#fff; width:700px; max-width:90vw; margin:10vh auto; padding:16px; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,.2)">
+    <h3 style="margin-top:0">Redaction Rules</h3>
+    <p>Enter one JavaScript regex per line (without slashes). These will be applied to strings in payloads in addition to the built-in email/token rules.</p>
+    <textarea id="redactRules" style="width:100%; height:160px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;"></textarea>
+    <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end">
+      <button id="redactCancel" class="btn">Cancel</button>
+      <button id="redactSave" class="btn">Save</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="panel.js"></script>
+</body></html>

@@ -1,0 +1,20 @@
+name: Release zip
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  build-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip extension
+        run: |
+          cd extension
+          zip -r ../td-debugger-mv3.zip .
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: td-debugger-mv3.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
