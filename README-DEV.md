@@ -122,25 +122,23 @@ The extractor pipeline is intentionally pluggable — `panel.js` builds a list o
 
 ---
 
-If you want, I can: add a diagram (SVG or Mermaid) to this README-DEV, expand the test coverage to include `panel.js` parsing utilities, or generate a printable PDF of this doc. Which would you prefer? 
-
 ## Data flow diagram (Mermaid)
 
 The following Mermaid flowchart shows the main runtime path: how requests are captured, parsed, summarized by extractors, redacted, and rendered. GitHub and many markdown viewers support Mermaid; you can also copy this block into https://mermaid.live to render it.
 
 ```mermaid
 flowchart LR
-  A[Browser page] --> B[DevTools open \n(TD Debugger panel)]
-  B --> C[Network listener \nchrome.devtools.network.onRequestFinished]
+  A[Browser page] --> B["DevTools open <br> (TD Debugger panel)"]
+  B --> C["Network listener<br>chrome.devtools.network.onRequestFinished"]
   C --> D[Capture request event]
   D --> E{Is TD host?}
   E -- No --> F[Skip unless showNonTD]
-  E -- Yes --> G[Read headers & body]
+  E -- Yes --> G["Read headers & body"]
   G --> H[Determine Content-Type]
   H --> I[Parse / normalize body]
   I --> J[Extractor pipeline]
-  J --> J1[custom-extractors.js (optional)]
-  J --> J2[defaultExtractors (parsers.js)]
+  J --> J1["custom-extractors.js (optional)"]
+  J --> J2["defaultExtractors (parsers.js)"]
   J2 --> K[Summarize payload]
   K --> L[Apply redaction rules]
   L --> M[Compose TD summary + URL info]
@@ -156,8 +154,6 @@ flowchart LR
   style L fill:#ffd,stroke:#333,stroke-width:1px
 ```
 
-If you'd rather have an SVG or a PNG embedded directly, I can generate one and add it to the repo (e.g., `docs/flow.svg`).
-I added an SVG version of the flow diagram at `docs/flow.svg`. The SVG is useful for viewers that don't render Mermaid.
 
 ![Flow diagram](./docs/flow.svg)
 
