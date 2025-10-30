@@ -1,0 +1,37 @@
+name: Generate docs assets
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  svg-to-png:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install librsvg
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+
+      - name: Convert SVG to PNG
+        run: |
+          set -e
+          SVG=docs/flow.svg
+          PNG=docs/flow.png
+          if [ -f "$SVG" ]; then
+            rsvg-convert -w 1200 -h 624 "$SVG" -o "$PNG.tmp"
+            if ! cmp -s "$PNG.tmp" "$PNG" 2>/dev/null; then
+              mv "$PNG.tmp" "$PNG"
+              echo "PNG changed"
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add "$PNG"
+              git commit -m "chore(docs): regenerate flow.png from SVG" || echo "no changes to commit"
+              git push
+            else
+              echo "No changes"
+              rm "$PNG.tmp"
+            fi
+          else
+            echo "No SVG to convert"
+          fi
