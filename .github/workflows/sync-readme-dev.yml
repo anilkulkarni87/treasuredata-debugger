@@ -27,6 +27,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "docs: sync README-Dev into docs/"
-          file_pattern: docs/README-DEV.md
+          file_pattern: "docs/Dev.md docs/About.md"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
