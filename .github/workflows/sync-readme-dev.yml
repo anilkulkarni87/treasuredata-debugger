@@ -6,6 +6,7 @@ on:
     paths:
       - 'README-DEV.md'
       - 'README.md'
+      - '.github/workflows/sync-readme-dev.yml' 
 
 permissions:
   contents: write
