@@ -3,6 +3,11 @@ name: Generate docs assets
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'docs/flow.svg'    # <-- run only if this file changed
+
+permissions:
+  contents: write
 
 jobs:
   svg-to-png:
@@ -13,25 +18,15 @@ jobs:
       - name: Install librsvg
         run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
 
-      - name: Convert SVG to PNG
+      - name: Convert SVG -> PNG (only if changed)
         run: |
           set -e
           SVG=docs/flow.svg
           PNG=docs/flow.png
-          if [ -f "$SVG" ]; then
-            rsvg-convert -w 1200 -h 624 "$SVG" -o "$PNG.tmp"
-            if ! cmp -s "$PNG.tmp" "$PNG" 2>/dev/null; then
-              mv "$PNG.tmp" "$PNG"
-              echo "PNG changed"
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-              git add "$PNG"
-              git commit -m "chore(docs): regenerate flow.png from SVG" || echo "no changes to commit"
-              git push
-            else
-              echo "No changes"
-              rm "$PNG.tmp"
-            fi
-          else
-            echo "No SVG to convert"
-          fi
+          rsvg-convert -w 1200 -h 624 "$SVG" -o "$PNG"
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(docs): regenerate flow.png from SVG"
+          file_pattern: docs/flow.png
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
