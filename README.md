@@ -1,75 +1,63 @@
-# Treasure Data Debugger (MV3) — Preflight-Aware
+# Treasure Data Debugger
 
-A lightweight Chrome/Edge **DevTools panel** to inspect **Treasure Data** browser SDK network calls.  
-Generic, privacy-first, and ready for teams to share configs.
+<div align="center">
+  <img src="docs/assets/images/logo.png" alt="TD Debugger" width="128" onerror="this.src='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'"/>
+  
+  <p><strong>Modern Chrome DevTools Extension for Treasure Data Request Debugging</strong></p>
 
-> Based on concepts from the legacy MV2 project, rebuilt for **Manifest V3** with a pluggable design.
+  [![CI](https://github.com/anilkulkarni87/treasuredata-debugger/workflows/CI/badge.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/actions)
+  [![Version](https://img.shields.io/badge/version-3.1.3-blue.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/releases)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Highlights
-- **Generic parsing** with extractors for:
-  - `{"events":[...]}` (TD JS SDK style)
-  - `{"records":[...]}` and `{"record":{...}}`
-  - **Fallback**: returns parsed object as-is
-- **Settings UI** (zero-code) to pick **keys of interest** and optional `"includeAll": true`
-- **Import/Export Settings** as JSON (easy to share across teams)
-- **Redaction Rules** editor (adds to built-in email/token masking)
-- **CORS Preflight toggle** — hide `OPTIONS` by default, show when debugging CORS
-- URL intelligence: `(database, table, region, edge, path, query)`
-- Filter box, status colors, CSV export
-- **Authorization masked**, **local-only**, **no telemetry**
+  <p>
+    <a href="#-features">Features</a> •
+    <a href="https://anilkulkarni87.github.io/treasuredata-debugger/getting-started">Getting Started</a> •
+    <a href="https://anilkulkarni87.github.io/treasuredata-debugger/features">Documentation</a> •
+    <a href="#-contributing">Contributing</a>
+  </p>
+</div>
 
-## Privacy
+---
 
-This tool runs **entirely locally** inside the DevTools window:
-- No analytics, no remote logging, no outbound calls from the panel.
-- `Authorization` header is masked in the UI.
-- Redaction masks common PII (emails, token-like strings) and your custom regex rules.
+## ✨ Features
 
-## Install (Developer Mode)
-1. Go to `chrome://extensions` (Edge: `edge://extensions`) and enable **Developer mode**.
-2. Click **Load unpacked** and select the `extension/` folder.
-3. Open DevTools on your site → switch to **TD Debugger** → reload the page.
+| Feature | Description |
+|---------|-------------|
+| 🔍 **Smart Capture** | Automatically detects and parses Treasure Data requests |
+| 🎯 **Advanced Filters** | Filter by status, database, or Regex search |
+| 🔄 **Comparison** | Side-by-side request comparison with diff highlighting |
+| 💾 **Presets** | Save and load your favorite filter configurations |
+| 🔒 **Privacy First** | Local processing with automatic PII redaction |
+| 🎨 **Modern UI** | Dark mode support, glassmorphism, and responsive design |
 
-## Usage Tips
-- Set **TD Hosts** to a broad suffix like `treasuredata.com` to catch all shards (`eu01.records.in.treasuredata.com`, etc.).
-- Open the panel **before** reloading the page (DevTools streams events only while open).
-- Use **Settings → includeAll** when exploring new schemas; then narrow down keys of interest.
-- Toggle **Show preflights** on when debugging CORS headers, off for a clean timeline.
+## 🚀 Quick Start
 
-## Configuration (Settings JSON)
-Example:
-```json
-{
-  "td-events": {
-    "keys": ["td_client_id","td_global_id","td_title","td_url"],
-    "includeAll": true
-  }
-}
-```
+1. **Install**: Load the `extension/` folder in Chrome Developer Mode.
+2. **Open**: Open DevTools (`F12`) and switch to the **TD Debugger** tab.
+3. **Capture**: Reload your page to see Treasure Data requests appear.
 
-## Import/Export
-Use the header buttons:
-- **Export** → downloads `td-debugger-settings.json`
-- **Import** → loads the same JSON (supports `customFields`, `redactionRules`, `tdHosts`, `showNonTD`, `showPreflight`, `tdFilter`, `tdRedact`).
+[**→ Read the Full Getting Started Guide**](https://anilkulkarni87.github.io/treasuredata-debugger/getting-started)
 
-## Development
-- Edit files in `extension/`, then **Reload** at `chrome://extensions` after changes.
-- Add site- or team-specific logic in `extension/custom-extractors.js` (ignored by default) to avoid forks.
+## 📚 Documentation
 
-## Release via GitHub Actions
-Tagging a commit zips `extension/` and attaches to a GitHub Release.
+Complete documentation is available at **[anilkulkarni87.github.io/treasuredata-debugger](https://anilkulkarni87.github.io/treasuredata-debugger)**.
+
+- [**Features Guide**](https://anilkulkarni87.github.io/treasuredata-debugger/features)
+- [**Configuration**](https://anilkulkarni87.github.io/treasuredata-debugger/configuration)
+- [**Development**](https://anilkulkarni87.github.io/treasuredata-debugger/development)
+- [**Troubleshooting**](https://anilkulkarni87.github.io/treasuredata-debugger/troubleshooting)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ```bash
-# bump version in extension/manifest.json
-git add . && git commit -m "v1.0.0" && git tag v1.0.0
-git push origin main --tags
+# Development Setup
+git clone https://github.com/anilkulkarni87/treasuredata-debugger.git
+npm install
+npm test
 ```
 
-## Chrome Web Store (optional)
-Use the provided workflow to upload/publish via `chrome-webstore-upload-cli`.
+## 📄 License
 
-**Secrets required:**
-- `CWS_EXTENSION_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN`
-
-## License
 MIT © 2025

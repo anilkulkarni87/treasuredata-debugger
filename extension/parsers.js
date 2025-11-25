@@ -14,6 +14,17 @@
 //   }
 // }
 
+/**
+ * @typedef {import('./types.js').ExtractorConfig} ExtractorConfig
+ * @typedef {import('./types.js').Summarizer} Summarizer
+ * @typedef {import('./types.js').Extractor} Extractor
+ */
+
+/**
+ * Creates a summarizer with configurable caps for strings, arrays, and objects
+ * @param {ExtractorConfig} cfg - Configuration with maxString, maxArrayItems, maxObjectKeys
+ * @returns {Summarizer} Object with summarizeValue function
+ */
 function makeSummarizer(cfg = {}) {
   const maxString = Number.isFinite(cfg.maxString) ? cfg.maxString : 500;
   const maxArrayItems = Number.isFinite(cfg.maxArrayItems) ? cfg.maxArrayItems : 3;
@@ -53,6 +64,12 @@ function makeSummarizer(cfg = {}) {
   return { summarizeValue };
 }
 
+/**
+ * Builds a summarized object from an event/record based on configuration
+ * @param {object} ev - Source event or record object
+ * @param {ExtractorConfig} cfg - Configuration with keys, exclude, includeAll
+ * @returns {object} Summarized object with selected/filtered keys
+ */
 function buildObject(ev, cfg = {}) {
   const keys = Array.isArray(cfg.keys) ? cfg.keys : [];
   const exclude = new Set(Array.isArray(cfg.exclude) ? cfg.exclude : []);
@@ -77,6 +94,10 @@ function buildObject(ev, cfg = {}) {
   return out;
 }
 
+/**
+ * Default extractors for common TD payload formats
+ * @type {Extractor[]}
+ */
 export const defaultExtractors = [
   // TD JS SDK-style payloads: { "events": [ ... ] }
   {
@@ -93,7 +114,7 @@ export const defaultExtractors = [
       }
 
       return { event_count: events.length, sample };
-    }
+    },
   },
 
   // { "records": [ ... ] }
@@ -113,24 +134,23 @@ export const defaultExtractors = [
       });
 
       return { record_count: bodyObj.records.length, sample };
-    }
+    },
   },
 
   // { "record": { ... } }
   {
     name: 'td-record',
-    match: ({ bodyObj }) => bodyObj && typeof bodyObj.record === 'object' && bodyObj.record !== null,
+    match: ({ bodyObj }) =>
+      bodyObj && typeof bodyObj.record === 'object' && bodyObj.record !== null,
     summarize: ({ bodyObj, customFields }) => {
       const cfg = (customFields && customFields['td-record']) || {};
       const rec = bodyObj.record || {};
       const { summarizeValue } = makeSummarizer(cfg);
 
-      const sample = [
-        (cfg.keys || cfg.includeAll) ? buildObject(rec, cfg) : summarizeValue(rec)
-      ];
+      const sample = [cfg.keys || cfg.includeAll ? buildObject(rec, cfg) : summarizeValue(rec)];
 
       return { record_count: 1, sample };
-    }
+    },
   },
 
   // Fallback: return the object with safe summarization caps if configured as "generic"
@@ -141,6 +161,6 @@ export const defaultExtractors = [
       const cfg = (customFields && customFields['generic']) || {};
       const { summarizeValue } = makeSummarizer(cfg);
       return summarizeValue(bodyObj);
-    }
-  }
+    },
+  },
 ];

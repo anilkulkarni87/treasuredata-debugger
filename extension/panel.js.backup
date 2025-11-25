@@ -9,19 +9,49 @@
 
 import { defaultExtractors } from './parsers.js';
 
-// Import modules
-import { loadPrefs, savePrefs, loadRedactionRules, saveRedactionRules, loadFilterPresets, saveFilterPresets } from './modules/storage.js';
-import { redactPII } from './modules/redaction.js';
-import { extractTDInfo, isJsonLike, isTDRequest, isPreflight, maskAuthorization, mergeParsed } from './modules/parsing.js';
-import { renderTable as renderTableModule, updateDatabaseFilter, updatePaginationInfo, updatePaginationButtons, clearTable } from './modules/rendering.js';
-import { attachNetworkListener } from './modules/network.js';
-
 /**
  * Get element by ID
  * @param {string} id - Element ID
  * @returns {HTMLElement|null} Element or null
  */
 const $ = (id) => document.getElementById(id);
+
+// ---------- helpers ----------
+/**
+ * Check if content type is JSON-like
+ * @param {string} ct - Content-Type header value
+ * @returns {boolean} True if JSON-like
+ */
+function isJsonLike(ct) {
+  if (!ct) return false;
+  const v = ct.toLowerCase();
+  return v.includes('application/json') || v.includes('text/json') || /\+json\b/.test(v);
+}
+/**
+ * Mask authorization header value for privacy
+ * @param {string} v - Authorization header value
+ * @returns {string} Masked value
+ */
+function maskAuthorization(v) {
+  if (!v || typeof v !== 'string') return v;
+  const parts = v.split(/\s+/);
+  if (parts.length < 2) return '****';
+  const scheme = parts[0];
+  const token = parts.slice(1).join(' ');
+  const vis = token.slice(0, 8);
+  return `${scheme} ${vis}… (masked)`;
+}
+
+// define-once guard to avoid “already declared” if file ever gets injected twice
+if (!window.__td_isPreflight) {
+  window.__td_isPreflight = function (req) {
+    const method = req.request && req.request.method;
+    if (method !== 'OPTIONS') return false;
+    const hdrs = (req.request && req.request.headers) || [];
+    return hdrs.some((h) => (h.name || '').toLowerCase() === 'access-control-request-method');
+  };
+}
+const isPreflight = window.__td_isPreflight;
 
 // ---------- state ----------
 const state = {
@@ -32,8 +62,6 @@ const state = {
   showPreflight: false,
   maxVisible: 100, // Performance: limit visible entries
   currentPage: 0, // Performance: current page for pagination
-  tdRedact: false,
-  redactionRules: [],
 };
 
 let extractors = [...defaultExtractors];
@@ -46,32 +74,97 @@ async function loadCustomExtractors() {
   } catch { }
 }
 
-// ---------- prefs ----------
-async function loadPrefsUI() {
-  const prefs = await loadPrefs();
-
-  if (Array.isArray(prefs.tdHosts) && prefs.tdHosts.length) state.hosts = prefs.tdHosts;
-  if (typeof prefs.showNonTD === 'boolean') state.showNonTD = prefs.showNonTD;
-  state.showPreflight = !!prefs.showPreflight;
-
-  const hostsInput = $('hosts');
-  if (hostsInput) hostsInput.value = state.hosts.join(', ');
-  const nonTD = $('showNonTD');
-  if (nonTD) nonTD.checked = state.showNonTD;
-  const pre = $('showPreflight');
-  if (pre) pre.checked = state.showPreflight;
-  const filt = $('filter');
-  if (filt) filt.value = prefs.tdFilter || '';
-  const red = $('redact');
-  if (red) red.checked = !!prefs.tdRedact;
-  state.tdRedact = !!prefs.tdRedact;
-
-  // Load redaction rules
-  const rules = await loadRedactionRules();
-  state.redactionRules = rules || [];
+/**
+ * Check if URL matches configured TD hosts
+ * @param {string} url - Request URL
+ * @returns {boolean} True if matches TD hosts
+ */
+function isTDRequest(url) {
+  try {
+    const u = new URL(url);
+    return state.hosts.some((h) => u.host.endsWith(h));
+  } catch {
+    return false;
+  }
+}
+/**
+ * Extract Treasure Data metadata from URL and headers
+ * @param {string} url - Request URL
+ * @param {Array<{name: string, value: string}>} headersList - Request headers
+ * @returns {TDInfo} Extracted metadata
+ */
+function extractTDInfo(url, headersList) {
+  const out = {};
+  try {
+    const u = new URL(url);
+    out.host = u.host;
+    out.pathname = u.pathname || '';
+    out.query = Object.fromEntries(u.searchParams.entries());
+    const parts = out.pathname.replace(/^\/+/, '').split('/');
+    if (parts.length >= 2) {
+      out.database = parts[0];
+      out.table = parts[1];
+    }
+    const hp = out.host.split('.');
+    if (hp.length >= 4) {
+      out.region = hp[0];
+      out.edge = hp[1];
+    }
+    if (Array.isArray(headersList)) {
+      const headers = {};
+      for (const h of headersList) {
+        const name = (h.name || '').toLowerCase();
+        if (
+          name === 'content-type' ||
+          name === 'accept' ||
+          name === 'origin' ||
+          name.startsWith('sec-ch-ua')
+        ) {
+          headers[name] = h.value;
+        }
+        if (name === 'authorization') headers[name] = maskAuthorization(h.value);
+      }
+      if (Object.keys(headers).length) out.headers = headers;
+    }
+  } catch { }
+  return out;
+}
+/**
+ * Merge two parsed objects
+ * @param {any} a - First object
+ * @param {any} b - Second object
+ * @returns {any} Merged result
+ */
+function mergeParsed(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  if (typeof a === 'object' && typeof b === 'object') return { ...a, ...b };
+  return a;
 }
 
-async function savePrefsUI() {
+// ---------- prefs / redaction ----------
+function loadPrefs() {
+  chrome.storage.sync.get(
+    ['tdHosts', 'showNonTD', 'tdFilter', 'tdRedact', 'showPreflight'],
+    (res) => {
+      if (Array.isArray(res.tdHosts) && res.tdHosts.length) state.hosts = res.tdHosts;
+      if (typeof res.showNonTD === 'boolean') state.showNonTD = res.showNonTD;
+      state.showPreflight = !!res.showPreflight;
+
+      const hostsInput = $('hosts');
+      if (hostsInput) hostsInput.value = state.hosts.join(', ');
+      const nonTD = $('showNonTD');
+      if (nonTD) nonTD.checked = state.showNonTD;
+      const pre = $('showPreflight');
+      if (pre) pre.checked = state.showPreflight;
+      const filt = $('filter');
+      if (filt) filt.value = res.tdFilter || '';
+      const red = $('redact');
+      if (red) red.checked = !!res.tdRedact;
+    }
+  );
+}
+function savePrefs() {
   const hostsInput = $('hosts');
   const nonTD = $('showNonTD');
   const pre = $('showPreflight');
@@ -87,9 +180,8 @@ async function savePrefsUI() {
   state.hosts = hosts.length ? hosts : ['in.treasuredata.com'];
   state.showNonTD = !!(nonTD && nonTD.checked);
   state.showPreflight = !!(pre && pre.checked);
-  state.tdRedact = !!(red && red.checked);
 
-  await savePrefs({
+  chrome.storage.sync.set({
     tdHosts: state.hosts,
     showNonTD: state.showNonTD,
     showPreflight: state.showPreflight,
@@ -98,6 +190,56 @@ async function savePrefsUI() {
   });
 }
 
+function getBuiltInPatterns() {
+  return [
+    { re: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, sub: '***@***' },
+    { re: /\b([A-F0-9]{32,}|[A-Za-z0-9_\-]{24,})\b/g, sub: '****' },
+  ];
+}
+/**
+ * Load custom redaction rules from storage
+ * @returns {Promise<Array<{re: RegExp, sub: string}>>} Compiled redaction patterns
+ */
+function loadRedactionRules() {
+  return new Promise((resolve) =>
+    chrome.storage.sync.get(['redactionRules'], (res) => {
+      const lines = Array.isArray(res.redactionRules) ? res.redactionRules : [];
+      const compiled = [];
+      for (const line of lines) {
+        const s = String(line || '').trim();
+        if (!s) continue;
+        try {
+          compiled.push({ re: new RegExp(s, 'g'), sub: '****' });
+        } catch { }
+      }
+      resolve(compiled);
+    })
+  );
+}
+/**
+ * Redact PII from object using built-in and custom rules
+ * @param {any} obj - Object to redact
+ * @returns {Promise<any>} Redacted object
+ */
+async function redactPII(obj) {
+  const custom = await loadRedactionRules();
+  const patterns = [...getBuiltInPatterns(), ...custom];
+  function rec(x) {
+    if (Array.isArray(x)) return x.map(rec);
+    if (x && typeof x === 'object') {
+      const o = {};
+      for (const k of Object.keys(x)) o[k] = rec(x[k]);
+      return o;
+    }
+    if (typeof x === 'string') {
+      let s = x;
+      for (const p of patterns) s = s.replace(p.re, p.sub);
+      return s;
+    }
+    return x;
+  }
+  return rec(obj);
+}
 /**
  * Load custom fields configuration from storage
  * @returns {Promise<Record<string, import('./types.js').ExtractorConfig>>} Custom fields config
@@ -235,6 +377,38 @@ function matchesFilter(entry, q) {
 
   return hay.includes(q.toLowerCase());
 }
+function clearTable() {
+  const body = $('reqBody');
+  if (body) body.innerHTML = '';
+}
+
+/**
+ * Update database filter dropdown with unique databases
+ */
+function updateDatabaseFilter() {
+  const databases = new Set();
+  state.entries.forEach((e) => {
+    if (e.parsed?.database) databases.add(e.parsed.database);
+  });
+
+  const dbFilter = $('dbFilter');
+  if (dbFilter) {
+    const currentValue = dbFilter.value;
+    dbFilter.innerHTML = '<option value="">All Databases</option>';
+    Array.from(databases)
+      .sort()
+      .forEach((db) => {
+        const opt = document.createElement('option');
+        opt.value = db;
+        opt.textContent = db;
+        dbFilter.appendChild(opt);
+      });
+    // Restore previous selection if still valid
+    if (currentValue && databases.has(currentValue)) {
+      dbFilter.value = currentValue;
+    }
+  }
+}
 
 /**
  * Append a row to the table for an entry
@@ -256,13 +430,6 @@ async function appendRow(entry) {
   }
 
   const frag = tpl.content.cloneNode(true);
-
-  // Set checkbox data
-  const checkbox = frag.querySelector('.compare-checkbox');
-  if (checkbox) {
-    checkbox.dataset.idx = entry.idx;
-  }
-
   frag.querySelector('.idx').textContent = entry.idx;
   frag.querySelector('.time').textContent = new Date(entry.time).toLocaleTimeString();
   frag.querySelector('.method').textContent = entry.method || '';
@@ -290,7 +457,7 @@ async function appendRow(entry) {
   const headersCell = frag.querySelector('.headers-cell');
   if (headersCell && (entry.requestHeaders || entry.responseHeaders)) {
     const headersBtn = document.createElement('button');
-    headersBtn.className = 'btn btn-outline';
+    headersBtn.className = 'btn';
     headersBtn.textContent = '📋 Headers';
     headersBtn.style.fontSize = '11px';
     headersBtn.addEventListener('click', () => showHeadersModal(entry));
@@ -335,13 +502,114 @@ async function renderTable() {
 }
 
 // ---------- network capture ----------
-// Use network module to attach listener
-function setupNetworkCapture() {
-  attachNetworkListener(state, extractors, async (entry) => {
-    state.entries.push(entry);
-    await renderTable();
-    updateDatabaseFilter(state.entries);
-  }, parsePayload); // Pass parsePayload function
+function attachNetworkListener() {
+  chrome.devtools.network.onRequestFinished.addListener(async (req) => {
+    try {
+      if (!state.showPreflight && isPreflight(req)) return;
+
+      const url = req.request && req.request.url;
+      const method = req.request && req.request.method;
+      const isTD = isTDRequest(url);
+      if (!isTD && !state.showNonTD) return;
+
+      const postData = (req.request && req.request.postData && req.request.postData.text) || '';
+      const requestHeaders = (req.request && req.request.headers) || [];
+      const ctHdr = requestHeaders.find((h) => (h.name || '').toLowerCase() === 'content-type');
+      const requestCT = ctHdr && ctHdr.value;
+
+      const status = (req.response && req.response.status) || '';
+      const respCT = ((req.response && req.response.headers) || []).find(
+        (h) => (h.name || '').toLowerCase() === 'content-type'
+      );
+      const contentType = requestCT || (respCT && respCT.value) || '';
+
+      const idx = ++state.counter;
+      const time = Date.now();
+
+      const urlInfo = extractTDInfo(url, requestHeaders);
+
+      const finalize = async (bodyTextFromResp) => {
+        try {
+          const raw = postData || bodyTextFromResp || '';
+          let bodyParsed;
+
+          try {
+            bodyParsed = await parsePayload(contentType, raw);
+          } catch (parseErr) {
+            console.error('[TD Debugger] Parse error:', {
+              url,
+              contentType,
+              error: parseErr.message,
+              stack: parseErr.stack,
+            });
+            bodyParsed = {
+              __error__: `Parse failed: ${parseErr.message}`,
+              __raw_preview__: raw.slice(0, 200),
+            };
+          }
+
+          const tdSummary = {
+            ...(urlInfo.database && { database: urlInfo.database }),
+            ...(urlInfo.table && { table: urlInfo.table }),
+            ...(urlInfo.region && { region: urlInfo.region }),
+            ...(urlInfo.edge && { edge: urlInfo.edge }),
+            ...(urlInfo.query && Object.keys(urlInfo.query).length ? { query: urlInfo.query } : {}),
+            ...(urlInfo.pathname && { path: urlInfo.pathname }),
+            ...(urlInfo.headers && { headers: urlInfo.headers }),
+          };
+
+          const combined = mergeParsed(tdSummary, bodyParsed);
+
+          state.entries.push({
+            idx,
+            time,
+            method,
+            url,
+            status,
+            contentType,
+            parsed: combined,
+            preflight: method === 'OPTIONS',
+            requestHeaders: req.request?.headers || [],
+            responseHeaders: req.response?.headers || [],
+          });
+
+          await renderTable();
+          updateDatabaseFilter(); // Update database filter dropdown
+        } catch (finalizeErr) {
+          console.error('[TD Debugger] Finalize error:', {
+            url,
+            error: finalizeErr.message,
+            stack: finalizeErr.stack,
+          });
+          // Still add entry with error state
+          state.entries.push({
+            idx,
+            time,
+            method,
+            url,
+            status,
+            contentType,
+            parsed: { __error__: `Processing failed: ${finalizeErr.message}` },
+            preflight: method === 'OPTIONS',
+            requestHeaders: req.request?.headers || [],
+            responseHeaders: req.response?.headers || [],
+          });
+          await renderTable();
+        }
+      };
+
+      if (!postData) {
+        req.getContent((body) => finalize(body || ''));
+      } else {
+        finalize('');
+      }
+    } catch (err) {
+      console.error('[TD Debugger] Network listener error:', {
+        error: err.message,
+        stack: err.stack,
+      });
+    }
+  });
 }
 
 
@@ -355,11 +623,11 @@ function setupNetworkCapture() {
     });
 
   const hostsInput = $('hosts');
-  if (hostsInput) hostsInput.addEventListener('change', savePrefsUI);
+  if (hostsInput) hostsInput.addEventListener('change', savePrefs);
   const nonTD = $('showNonTD');
-  if (nonTD) nonTD.addEventListener('change', savePrefsUI);
+  if (nonTD) nonTD.addEventListener('change', savePrefs);
   const pre = $('showPreflight');
-  if (pre) pre.addEventListener('change', savePrefsUI);
+  if (pre) pre.addEventListener('change', savePrefs);
 
   const filterInput = $('filter');
   if (filterInput)
@@ -371,7 +639,6 @@ function setupNetworkCapture() {
   const red = $('redact');
   if (red)
     red.addEventListener('change', () => {
-      state.tdRedact = red.checked;
       chrome.storage.sync.set({ tdRedact: red.checked });
       renderTable();
     });
@@ -622,27 +889,14 @@ const settingsModal = $('settingsModal');
 const settingsJson = $('settingsJson');
 const settingsCancel = $('settingsCancel');
 const settingsSave = $('settingsSave');
-const settingsCloseBtn = $('settingsCloseBtn');
-
 if (settingsBtn && settingsModal && settingsJson && settingsCancel && settingsSave) {
   settingsBtn.addEventListener('click', () => {
     chrome.storage.sync.get(['customFields'], (res) => {
       settingsJson.value = JSON.stringify(res.customFields || {}, null, 2);
-      settingsModal.classList.add('show');
-      settingsModal.style.display = 'flex';
+      settingsModal.style.display = 'block';
     });
   });
-
-  const closeSettings = () => {
-    settingsModal.classList.remove('show');
-    settingsModal.style.display = 'none';
-  };
-
-  settingsCancel.addEventListener('click', closeSettings);
-  if (settingsCloseBtn) {
-    settingsCloseBtn.addEventListener('click', closeSettings);
-  }
-
+  settingsCancel.addEventListener('click', () => (settingsModal.style.display = 'none'));
   settingsSave.addEventListener('click', () => {
     try {
       const text = settingsJson.value.trim();
@@ -664,12 +918,12 @@ if (settingsBtn && settingsModal && settingsJson && settingsCancel && settingsSa
 
       // Save
       chrome.storage.sync.set({ customFields: obj }, () => {
-        closeSettings();
+        settingsModal.style.display = 'none';
         showToast('Settings saved successfully', 'success');
         renderTable();
       });
     } catch (e) {
-      showToast(`Invalid JSON: ${e.message}`, 'error');
+      showToast(`Invalid JSON: ${e.message} `, 'error');
     }
   });
 }
@@ -713,31 +967,15 @@ if (importBtn && importFileInput) {
 }
 
 if (openRedactLink && redactModal && redactArea && redactCancelBtn && redactSaveBtn) {
-  const redactBtn = openRedactLink; // Assuming openRedactLink is the button to open the modal
-  const redactCloseBtn = $('redactCloseBtn');
-
-  redactBtn.addEventListener('click', (e) => {
-    e.preventDefault(); // Prevent default link behavior if it's an anchor
-    chrome.storage.sync.get('redactionRules', (res) => {
+  openRedactLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    chrome.storage.sync.get(['redactionRules'], (res) => {
       const rules = res.redactionRules || [];
       redactArea.value = rules.join('\n');
-      redactModal.classList.add('show');
-      redactModal.style.display = 'flex';
+      redactModal.style.display = 'block';
     });
   });
-
-  const closeRedact = () => {
-    redactModal.classList.remove('show');
-    redactModal.style.display = 'none';
-  };
-
-  redactCancelBtn.addEventListener('click', closeRedact);
-  if (redactCloseBtn) redactCloseBtn.addEventListener('click', closeRedact);
-
-  // Click outside to close
-  redactModal.addEventListener('click', (e) => {
-    if (e.target === redactModal) closeRedact();
-  });
+  redactCancelBtn.addEventListener('click', () => (redactModal.style.display = 'none'));
   redactSaveBtn.addEventListener('click', () => {
     const text = redactArea.value;
     const { valid, errors, lines } = validateRedactionRules(text);
@@ -807,21 +1045,7 @@ function showHeadersModal(entry) {
         if (isImportantHeader(h.name)) {
           item.classList.add('important');
         }
-        let value = h.value;
-
-        // Apply redaction if enabled
-        if (state.tdRedact) {
-          // 1. Built-in Authorization masking
-          if (h.name.toLowerCase() === 'authorization') {
-            value = maskAuthorization(value);
-          }
-          // 2. Custom redaction rules (apply to all headers)
-          if (state.redactionRules && state.redactionRules.length > 0) {
-            value = redactPII(value, state.redactionRules);
-          }
-        }
-
-        item.innerHTML = `<strong>${h.name}:</strong> ${value}`;
+        item.innerHTML = `<strong>${h.name}:</strong> ${h.value}`;
         reqHeaders.appendChild(item);
       });
     }
@@ -840,62 +1064,35 @@ function showHeadersModal(entry) {
         if (isImportantHeader(h.name)) {
           item.classList.add('important');
         }
-        let value = h.value;
-
-        // Apply redaction if enabled
-        if (state.tdRedact) {
-          // 1. Built-in Authorization masking
-          if (h.name.toLowerCase() === 'authorization') {
-            value = maskAuthorization(value);
-          }
-          // 2. Custom redaction rules (apply to all headers)
-          if (state.redactionRules && state.redactionRules.length > 0) {
-            value = redactPII(value, state.redactionRules);
-          }
-        }
-
-        item.innerHTML = `<strong>${h.name}:</strong> ${value}`;
+        item.innerHTML = `<strong>${h.name}:</strong> ${h.value}`;
         respHeaders.appendChild(item);
       });
     }
   }
 
-  // Show modal
-  modal.classList.add('show');
-  modal.style.display = 'flex';
+  modal.style.display = 'block';
 
-  // Wire up close buttons
-  const closeBtnFooter = $('headersClose');
-  if (closeBtnFooter) {
-    closeBtnFooter.onclick = () => {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    };
+  // Wire up close button
+  const closeBtn = $('headersClose');
+  if (closeBtn) {
+    closeBtn.onclick = () => (modal.style.display = 'none');
   }
 
-  const closeBtnHeader = $('headersCloseBtn');
-  if (closeBtnHeader) {
-    closeBtnHeader.onclick = () => {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
+  // Wire up copy button
+  const copyBtn = $('copyHeaders');
+  if (copyBtn) {
+    copyBtn.onclick = async () => {
+      const reqText = (entry.requestHeaders || [])
+        .map((h) => `${h.name}: ${h.value}`)
+        .join('\n');
+      const respText = (entry.responseHeaders || [])
+        .map((h) => `${h.name}: ${h.value}`)
+        .join('\n');
+      const text = `Request Headers:\n${reqText}\n\nResponse Headers:\n${respText}`;
+      await navigator.clipboard.writeText(text);
+      showToast('Headers copied to clipboard', 'success');
     };
   }
-
-  // Click outside to close
-  modal.onclick = (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    };
-  }
-
-  // Click outside to close
-  modal.onclick = (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    }
-  };
 }
 
 /**
@@ -918,241 +1115,27 @@ function isImportantHeader(name) {
   return important.includes(name.toLowerCase());
 }
 
-// ---------- comparison feature ----------
-/**
- * Update compare button state based on selected checkboxes
- */
-function updateCompareButton() {
-  const checkboxes = document.querySelectorAll('.compare-checkbox:checked');
-  const compareBtn = $('compareBtn');
-  if (compareBtn) {
-    compareBtn.textContent = `🔍 Compare Selected (${checkboxes.length})`;
-    compareBtn.disabled = checkboxes.length !== 2;
-  }
-}
-
-// Select all checkbox
-const selectAll = $('selectAll');
-if (selectAll) {
-  selectAll.addEventListener('change', (e) => {
-    const checkboxes = document.querySelectorAll('.compare-checkbox');
-    checkboxes.forEach((cb) => {
-      cb.checked = e.target.checked;
-    });
-    updateCompareButton();
-  });
-}
-
-// Listen for checkbox changes (delegated event)
-document.addEventListener('change', (e) => {
-  if (e.target.classList.contains('compare-checkbox')) {
-    updateCompareButton();
-
-    // Update select-all state
-    const allCheckboxes = document.querySelectorAll('.compare-checkbox');
-    const checkedCheckboxes = document.querySelectorAll('.compare-checkbox:checked');
-    const selectAllCheckbox = $('selectAll');
-    if (selectAllCheckbox) {
-      selectAllCheckbox.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
-      selectAllCheckbox.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
-    }
-  }
-});
-
-// Compare button
-const compareBtn = $('compareBtn');
-if (compareBtn) {
-  compareBtn.addEventListener('click', () => {
-    const selected = Array.from(document.querySelectorAll('.compare-checkbox:checked'))
-      .map((cb) => parseInt(cb.dataset.idx));
-
-    if (selected.length !== 2) {
-      showToast('Please select exactly 2 requests to compare', 'warning');
-      return;
-    }
-
-    const [idx1, idx2] = selected;
-    const entry1 = state.entries.find((e) => e.idx === idx1);
-    const entry2 = state.entries.find((e) => e.idx === idx2);
-
-    if (!entry1 || !entry2) {
-      showToast('Could not find selected entries', 'error');
-      return;
-    }
-
-    showComparisonModal(entry1, entry2);
-  });
-}
-
-/**
- * Show comparison modal with two entries side-by-side
- * @param {Entry} entry1 - First entry
- * @param {Entry} entry2 - Second entry
- */
-function showComparisonModal(entry1, entry2) {
-  const modal = $('comparisonModal');
-  if (!modal) return;
-
-  // Populate entry 1
-  const comp1Idx = $('comp1Idx');
-  const comp1Method = $('comp1Method');
-  const comp1Status = $('comp1Status');
-  const comp1Time = $('comp1Time');
-  const comp1Url = $('comp1Url');
-  const comp1Headers = $('comp1Headers');
-  const comp1Payload = $('comp1Payload');
-
-  if (comp1Idx) comp1Idx.textContent = entry1.idx;
-  if (comp1Method) comp1Method.textContent = entry1.method || '';
-  if (comp1Time) comp1Time.textContent = new Date(entry1.time).toLocaleString();
-  if (comp1Status) {
-    comp1Status.textContent = entry1.status || '';
-  }
-  if (comp1Url) comp1Url.textContent = entry1.url || '';
-  if (comp1Headers) {
-    const headers = (entry1.requestHeaders || [])
-      .filter((h) => isImportantHeader(h.name))
-      .map((h) => {
-        let val = h.value;
-        if (state.tdRedact) {
-          if (h.name.toLowerCase() === 'authorization') val = maskAuthorization(val);
-          if (state.redactionRules && state.redactionRules.length > 0) val = redactPII(val, state.redactionRules);
-        }
-        return `${h.name}: ${val}`;
-      })
-      .join('\n');
-    comp1Headers.textContent = headers;
-  }
-  if (comp1Payload) {
-    let payload = entry1.parsed || {};
-    if (state.tdRedact) {
-      payload = redactPII(payload, state.redactionRules);
-    }
-    comp1Payload.textContent = JSON.stringify(payload, null, 2);
-  }
-
-  // Populate entry 2
-  const comp2Idx = $('comp2Idx');
-  const comp2Method = $('comp2Method');
-  const comp2Status = $('comp2Status');
-  const comp2Time = $('comp2Time');
-  const comp2Url = $('comp2Url');
-  const comp2Headers = $('comp2Headers');
-  const comp2Payload = $('comp2Payload');
-
-  if (comp2Idx) comp2Idx.textContent = entry2.idx;
-  if (comp2Method) comp2Method.textContent = entry2.method || '';
-  if (comp2Time) comp2Time.textContent = new Date(entry2.time).toLocaleString();
-  if (comp2Status) {
-    comp2Status.textContent = entry2.status || '';
-  }
-  if (comp2Url) comp2Url.textContent = entry2.url || '';
-  if (comp2Headers) {
-    const headers = (entry2.requestHeaders || [])
-      .filter((h) => isImportantHeader(h.name))
-      .map((h) => {
-        let val = h.value;
-        if (state.tdRedact) {
-          if (h.name.toLowerCase() === 'authorization') val = maskAuthorization(val);
-          if (state.redactionRules && state.redactionRules.length > 0) val = redactPII(val, state.redactionRules);
-        }
-        return `${h.name}: ${val}`;
-      })
-      .join('\n');
-    comp2Headers.textContent = headers;
-  }
-  if (comp2Payload) {
-    let payload = entry2.parsed || {};
-    if (state.tdRedact) {
-      payload = redactPII(payload, state.redactionRules);
-    }
-    comp2Payload.textContent = JSON.stringify(payload, null, 2);
-  }
-
-  // Detect differences
-  highlightDiff(comp1Payload, comp2Payload);
-  const differences = [];
-  if (entry1.method !== entry2.method) differences.push('Method differs');
-  if (entry1.status !== entry2.status) differences.push('Status code differs');
-  if (entry1.url !== entry2.url) differences.push('URL differs');
-
-  const payload1Str = JSON.stringify(entry1.parsed);
-  const payload2Str = JSON.stringify(entry2.parsed);
-  if (payload1Str !== payload2Str) differences.push('Payload differs');
-
-  // Show difference indicator
-  const diffIndicator = $('compDiffIndicator');
-  const diffList = $('compDiffList');
-  if (diffIndicator && diffList) {
-    if (differences.length > 0) {
-      diffIndicator.style.display = 'block';
-      diffIndicator.style.background = 'rgba(237, 137, 54, 0.1)';
-      diffIndicator.style.borderLeft = '3px solid #ed8936';
-      diffList.innerHTML = differences.map((d) => `<li>${d}</li>`).join('');
-    } else {
-      diffIndicator.style.display = 'block';
-      diffIndicator.style.background = 'rgba(72, 187, 120, 0.1)';
-      diffIndicator.style.borderLeft = '3px solid #48bb78';
-      diffList.innerHTML = '<li>✓ Requests are identical</li>';
-    }
-  }
-
-  // Show modal
-  modal.classList.add('show');
-  modal.style.display = 'flex';
-
-  // Close button
-  const closeBtn = modal.querySelector('.modal-close');
-  if (closeBtn) {
-    closeBtn.onclick = () => {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    };
-  }
-
-  // Click outside to close
-  modal.onclick = (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    }
-  };
-}
-
-/**
- * Highlight differences between two elements (placeholder)
- * @param {HTMLElement} el1 
- * @param {HTMLElement} el2 
- */
-function highlightDiff(el1, el2) {
-  // Placeholder for future visual diff implementation
-  // Currently handled by the summary list below
-}
-
 // ---------- keyboard navigation ----------
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const settingsModal = $('settingsModal');
     const redactModal = $('redactModal');
     const headersModal = $('headersModal');
-    const comparisonModal = $('comparisonModal');
 
-    if (settingsModal && settingsModal.classList.contains('show')) {
-      settingsModal.classList.remove('show');
+    if (settingsModal && settingsModal.style.display === 'block') {
       settingsModal.style.display = 'none';
       const settingsBtn = $('settingsBtn');
       if (settingsBtn) settingsBtn.focus();
-    } else if (redactModal && redactModal.classList.contains('show')) {
-      redactModal.classList.remove('show');
+    }
+
+    if (redactModal && redactModal.style.display === 'block') {
       redactModal.style.display = 'none';
       const openRedactLink = $('openRedact');
       if (openRedactLink) openRedactLink.focus();
-    } else if (headersModal && headersModal.classList.contains('show')) {
-      headersModal.classList.remove('show');
+    }
+
+    if (headersModal && headersModal.style.display === 'block') {
       headersModal.style.display = 'none';
-    } else if (comparisonModal && comparisonModal.classList.contains('show')) {
-      comparisonModal.classList.remove('show');
-      comparisonModal.style.display = 'none';
     }
   }
 });
@@ -1221,5 +1204,4 @@ function validateRedactionRules(text) {
 // ---------- init ----------
 loadPrefs();
 loadCustomExtractors();
-loadPrefsUI();
-setupNetworkCapture();
+attachNetworkListener();

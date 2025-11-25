@@ -4,9 +4,20 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint extension/**/*.js test/**/*.js",
+    "lint:fix": "eslint --fix extension/**/*.js test/**/*.js",
+    "format": "prettier --write \"**/*.{js,json,html,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,json,html,css,md}\""
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^61.4.1",
+    "prettier": "^3.6.2",
     "vitest": "^1.0.0"
   }
 }
