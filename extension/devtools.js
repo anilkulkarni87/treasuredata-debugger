@@ -1,1 +1,1 @@
-chrome.devtools.panels.create('TD Debugger','','panel.html',()=>{});
+chrome.devtools.panels.create('TD Debugger', '', 'panel.html', () => {});

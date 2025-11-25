@@ -3,3 +3,11 @@
 .vscode/
 .idea/
 node_modules/
+*.log
+npm-debug.log*
+.env
+.env.local
+coverage/
+dist/
+*.tgz
+.npmrc

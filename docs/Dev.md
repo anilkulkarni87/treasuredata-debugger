@@ -32,24 +32,25 @@ Requests are represented by the DevTools network event structure. `panel.js` rea
 Entry stored in `state.entries` (one per captured request):
 
 {
-  idx: number,           // increasing capture index
-  time: number,          // epoch ms when captured
-  method: string,        // HTTP method
-  url: string,           // full request URL
-  status: number|string, // response status (if available)
-  contentType: string,   // chosen content type from headers
-  parsed: any,           // result from extractor.summarize (object/primitive)
-  preflight: boolean     // true if OPTIONS preflight
+idx: number, // increasing capture index
+time: number, // epoch ms when captured
+method: string, // HTTP method
+url: string, // full request URL
+status: number|string, // response status (if available)
+contentType: string, // chosen content type from headers
+parsed: any, // result from extractor.summarize (object/primitive)
+preflight: boolean // true if OPTIONS preflight
 }
 
 Extractor input context (what extractors receive):
 
 {
-  bodyObj: any,         // parsed JSON or object derived from form/newline JSON
-  customFields: object  // user-provided per-extractor config from chrome.storage
+bodyObj: any, // parsed JSON or object derived from form/newline JSON
+customFields: object // user-provided per-extractor config from chrome.storage
 }
 
 Extractor output: any serializable value. Built-in extractors return objects like:
+
 - `td-events`: { event_count: N, sample: [ ... ] }
 - `td-records`: { record_count: N, sample: [ ... ] }
 - `td-record`: { record_count: 1, sample: [ ... ] }
@@ -72,9 +73,9 @@ The extractor pipeline is intentionally pluggable — `panel.js` builds a list o
    - Add `extension/custom-extractors.js` exporting `default` or `extractors` array of extractor objects.
    - Each extractor shape:
      {
-       name: 'my-extractor',
-       match: ({ bodyObj, customFields }) => boolean,
-       summarize: ({ bodyObj, customFields }) => any
+     name: 'my-extractor',
+     match: ({ bodyObj, customFields }) => boolean,
+     summarize: ({ bodyObj, customFields }) => any
      }
    - Keep extractors pure and defensive — catching exceptions in `match`/`summarize` prevents panel breaks.
 
@@ -153,7 +154,6 @@ flowchart LR
   style J2 fill:#bbf,stroke:#333,stroke-width:1px
   style L fill:#ffd,stroke:#333,stroke-width:1px
 ```
-
 
 ![Flow diagram](./docs/flow.svg)
 
