@@ -29,12 +29,14 @@ extension/
 ## Setup
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/anilkulkarni87/treasuredata-debugger.git
    cd treasuredata-debugger
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```

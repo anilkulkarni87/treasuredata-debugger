@@ -10,10 +10,30 @@
 import { defaultExtractors } from './parsers.js';
 
 // Import modules
-import { loadPrefs, savePrefs, loadRedactionRules, saveRedactionRules, loadFilterPresets, saveFilterPresets } from './modules/storage.js';
+import {
+  loadPrefs,
+  savePrefs,
+  loadRedactionRules,
+  saveRedactionRules,
+  loadFilterPresets,
+  saveFilterPresets,
+} from './modules/storage.js';
 import { redactPII } from './modules/redaction.js';
-import { extractTDInfo, isJsonLike, isTDRequest, isPreflight, maskAuthorization, mergeParsed } from './modules/parsing.js';
-import { renderTable as renderTableModule, updateDatabaseFilter, updatePaginationInfo, updatePaginationButtons, clearTable } from './modules/rendering.js';
+import {
+  extractTDInfo,
+  isJsonLike,
+  isTDRequest,
+  isPreflight,
+  maskAuthorization,
+  mergeParsed,
+} from './modules/parsing.js';
+import {
+  renderTable as renderTableModule,
+  updateDatabaseFilter,
+  updatePaginationInfo,
+  updatePaginationButtons,
+  clearTable,
+} from './modules/rendering.js';
 import { attachNetworkListener } from './modules/network.js';
 
 /**
@@ -43,7 +63,7 @@ async function loadCustomExtractors() {
     const mod = await import(chrome.runtime.getURL('custom-extractors.js'));
     const extra = (mod && (mod.default || mod.extractors)) || [];
     if (Array.isArray(extra) && extra.length) extractors = [...extra, ...extractors];
-  } catch { }
+  } catch {}
 }
 
 // ---------- prefs ----------
@@ -80,9 +100,9 @@ async function savePrefsUI() {
 
   const hosts = hostsInput
     ? hostsInput.value
-      .split(',')
-      .map((h) => h.trim())
-      .filter(Boolean)
+        .split(',')
+        .map((h) => h.trim())
+        .filter(Boolean)
     : [];
   state.hosts = hosts.length ? hosts : ['in.treasuredata.com'];
   state.showNonTD = !!(nonTD && nonTD.checked);
@@ -137,7 +157,7 @@ async function parsePayload(contentType, rawText) {
       } catch {
         return bodyObj;
       }
-    } catch { }
+    } catch {}
   }
 
   // x-www-form-urlencoded
@@ -188,7 +208,7 @@ async function parsePayload(contentType, rawText) {
       } catch {
         return bodyObj;
       }
-    } catch { }
+    } catch {}
   }
 
   // fallback: trimmed string
@@ -252,7 +272,7 @@ async function appendRow(entry) {
   if (doRedact && parsed && typeof parsed === 'object') {
     try {
       parsed = await redactPII(parsed);
-    } catch { }
+    } catch {}
   }
 
   const frag = tpl.content.cloneNode(true);
@@ -337,13 +357,17 @@ async function renderTable() {
 // ---------- network capture ----------
 // Use network module to attach listener
 function setupNetworkCapture() {
-  attachNetworkListener(state, extractors, async (entry) => {
-    state.entries.push(entry);
-    await renderTable();
-    updateDatabaseFilter(state.entries);
-  }, parsePayload); // Pass parsePayload function
+  attachNetworkListener(
+    state,
+    extractors,
+    async (entry) => {
+      state.entries.push(entry);
+      await renderTable();
+      updateDatabaseFilter(state.entries);
+    },
+    parsePayload
+  ); // Pass parsePayload function
 }
-
 
 // ---------- UI wiring ----------
 (function wireHandlers() {
@@ -781,7 +805,6 @@ if (exportBtn) {
   });
 }
 
-
 // ---------- headers modal ----------
 /**
  * Show headers modal for an entry
@@ -886,8 +909,8 @@ function showHeadersModal(entry) {
     if (e.target === modal) {
       modal.classList.remove('show');
       modal.style.display = 'none';
-    };
-  }
+    }
+  };
 
   // Click outside to close
   modal.onclick = (e) => {
@@ -953,8 +976,10 @@ document.addEventListener('change', (e) => {
     const checkedCheckboxes = document.querySelectorAll('.compare-checkbox:checked');
     const selectAllCheckbox = $('selectAll');
     if (selectAllCheckbox) {
-      selectAllCheckbox.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
-      selectAllCheckbox.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
+      selectAllCheckbox.checked =
+        allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
+      selectAllCheckbox.indeterminate =
+        checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
     }
   }
 });
@@ -963,8 +988,9 @@ document.addEventListener('change', (e) => {
 const compareBtn = $('compareBtn');
 if (compareBtn) {
   compareBtn.addEventListener('click', () => {
-    const selected = Array.from(document.querySelectorAll('.compare-checkbox:checked'))
-      .map((cb) => parseInt(cb.dataset.idx));
+    const selected = Array.from(document.querySelectorAll('.compare-checkbox:checked')).map((cb) =>
+      parseInt(cb.dataset.idx)
+    );
 
     if (selected.length !== 2) {
       showToast('Please select exactly 2 requests to compare', 'warning');
@@ -1016,7 +1042,8 @@ function showComparisonModal(entry1, entry2) {
         let val = h.value;
         if (state.tdRedact) {
           if (h.name.toLowerCase() === 'authorization') val = maskAuthorization(val);
-          if (state.redactionRules && state.redactionRules.length > 0) val = redactPII(val, state.redactionRules);
+          if (state.redactionRules && state.redactionRules.length > 0)
+            val = redactPII(val, state.redactionRules);
         }
         return `${h.name}: ${val}`;
       })
@@ -1054,7 +1081,8 @@ function showComparisonModal(entry1, entry2) {
         let val = h.value;
         if (state.tdRedact) {
           if (h.name.toLowerCase() === 'authorization') val = maskAuthorization(val);
-          if (state.redactionRules && state.redactionRules.length > 0) val = redactPII(val, state.redactionRules);
+          if (state.redactionRules && state.redactionRules.length > 0)
+            val = redactPII(val, state.redactionRules);
         }
         return `${h.name}: ${val}`;
       })
@@ -1121,8 +1149,8 @@ function showComparisonModal(entry1, entry2) {
 
 /**
  * Highlight differences between two elements (placeholder)
- * @param {HTMLElement} el1 
- * @param {HTMLElement} el2 
+ * @param {HTMLElement} el1
+ * @param {HTMLElement} el2
  */
 function highlightDiff(el1, el2) {
   // Placeholder for future visual diff implementation

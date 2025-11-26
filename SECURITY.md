@@ -19,12 +19,14 @@ We take the security of Treasure Data Debugger seriously. If you believe you hav
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
 Instead, please report them via:
+
 - **Email**: [your-email@example.com] (replace with actual contact)
 - **GitHub Security Advisories**: Use the "Security" tab in the repository
 
 ### What to Include
 
 Please include the following information in your report:
+
 - Type of vulnerability
 - Full paths of source file(s) related to the vulnerability
 - Location of the affected source code (tag/branch/commit or direct URL)
@@ -40,12 +42,12 @@ Please include the following information in your report:
 
 ### Severity Levels
 
-| Severity | Description | Response Time |
-|----------|-------------|---------------|
-| **Critical** | Remote code execution, data exfiltration | 24-48 hours |
-| **High** | Authentication bypass, privilege escalation | 3-7 days |
-| **Medium** | XSS, CSRF, information disclosure | 7-14 days |
-| **Low** | Minor information leaks, DoS | 14-30 days |
+| Severity     | Description                                 | Response Time |
+| ------------ | ------------------------------------------- | ------------- |
+| **Critical** | Remote code execution, data exfiltration    | 24-48 hours   |
+| **High**     | Authentication bypass, privilege escalation | 3-7 days      |
+| **Medium**   | XSS, CSRF, information disclosure           | 7-14 days     |
+| **Low**      | Minor information leaks, DoS                | 14-30 days    |
 
 ## Security Measures
 
@@ -141,6 +143,7 @@ Please include the following information in your report:
 ### Coordinated Disclosure
 
 We follow coordinated disclosure:
+
 1. Reporter notifies us privately
 2. We confirm and investigate
 3. We develop and test a fix
@@ -156,12 +159,14 @@ We follow coordinated disclosure:
 ### Credit
 
 We will credit security researchers who:
+
 - Report vulnerabilities responsibly
 - Follow our disclosure policy
 - Don't exploit vulnerabilities
 - Help us improve security
 
 Credit will be given in:
+
 - Security advisory
 - CHANGELOG.md
 - README.md (if significant)
@@ -188,6 +193,7 @@ No security vulnerabilities have been reported or fixed yet.
 ## Contact
 
 For security concerns, please contact:
+
 - **Email**: [your-email@example.com]
 - **GitHub**: [@your-username]
 
