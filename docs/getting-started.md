@@ -53,6 +53,8 @@ Before you start debugging, it's helpful to configure a few settings.
 
 ## 3. Your First Capture
 
+![Main Interface](assets/screenshots/main-interface.png)
+
 Now you're ready to capture data!
 
 1. Navigate to a page that sends data to Treasure Data.

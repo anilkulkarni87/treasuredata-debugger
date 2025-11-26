@@ -9,6 +9,8 @@ Customize the Treasure Data Debugger to match your specific implementation and w
 
 ## Settings Overview
 
+![Settings Modal](assets/screenshots/settings.png)
+
 Access settings by clicking the **Gear Icon** (⚙️) in the top right corner.
 
 ### General Settings
@@ -52,6 +54,8 @@ export const myCustomExtractor = {
 ---
 
 ## Redaction Rules
+
+![Redaction Rules](assets/screenshots/redaction.png)
 
 Protect sensitive data by configuring redaction rules. These rules are applied to the "Parsed Payload" view.
 

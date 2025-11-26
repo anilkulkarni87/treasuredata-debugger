@@ -13,6 +13,8 @@ A powerful, privacy-first Chrome/Edge DevTools panel for inspecting and debuggin
 
 ## ✨ Key Features
 
+![Main Interface](assets/screenshots/main-interface.png)
+
 ### 🔍 **Advanced Request Capture**
 - Automatic detection of Treasure Data requests
 - Support for multiple TD regions and shards

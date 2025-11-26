@@ -34,6 +34,8 @@ Explore the powerful features of the Treasure Data Debugger designed to make you
 
 ## Advanced Filtering
 
+![Advanced Filtering](assets/screenshots/filters.png)
+
 The filter bar allows you to narrow down requests quickly.
 
 ### Status Filter
@@ -56,6 +58,8 @@ Type in the search box to filter by URL or payload content.
 
 ## Request Comparison
 
+![Request Comparison](assets/screenshots/comparison-modal.png)
+
 Debug intermittent issues or compare environments by comparing two requests.
 
 1. **Select Requests**: Check the boxes next to any two requests in the table.
@@ -71,6 +75,8 @@ Debug intermittent issues or compare environments by comparing two requests.
 ---
 
 ## Filter Presets
+
+![Filter Presets](assets/screenshots/presets.png)
 
 Don't waste time re-configuring filters. Save them!
 
@@ -88,6 +94,8 @@ Don't waste time re-configuring filters. Save them!
 
 ## Headers Viewer
 
+![Headers Viewer](assets/screenshots/headers-viewer.png)
+
 Inspect the raw HTTP headers for any request.
 
 - Click the **View** button in the Headers column.
@@ -97,6 +105,8 @@ Inspect the raw HTTP headers for any request.
 ---
 
 ## Data Export
+
+![Data Export](assets/screenshots/export.png)
 
 Need to analyze data in Excel or share it with the team?
 
