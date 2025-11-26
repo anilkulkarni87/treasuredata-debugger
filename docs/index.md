@@ -13,37 +13,45 @@ A powerful, privacy-first Chrome/Edge DevTools panel for inspecting and debuggin
 
 ## ✨ Key Features
 
+![Main Interface](assets/screenshots/main-interface.png)
+
 ### 🔍 **Advanced Request Capture**
+
 - Automatic detection of Treasure Data requests
 - Support for multiple TD regions and shards
 - CORS preflight handling
 - Non-TD request filtering
 
 ### 🎯 **Smart Filtering**
+
 - Text and regex search
 - Status code filtering (2xx, 3xx, 4xx, 5xx)
 - Database-specific filtering
 - Saveable filter presets with sync
 
 ### 🔄 **Request Comparison**
+
 - Side-by-side request comparison
 - Automatic difference detection
 - Headers and payload comparison
 - Visual diff indicators
 
 ### 📊 **Data Export**
+
 - CSV export for analysis
 - JSON export for processing
 - Filtered export support
 - Batch operations
 
 ### 🔒 **Privacy & Security**
+
 - 100% local processing
 - No telemetry or tracking
 - Authorization header masking
 - PII redaction (built-in + custom rules)
 
 ### ⚡ **Performance**
+
 - Pagination for large datasets
 - Optimized rendering
 - Efficient filtering
@@ -87,6 +95,7 @@ A powerful, privacy-first Chrome/Edge DevTools panel for inspecting and debuggin
 ## 🎨 Modern UI
 
 The extension features a contemporary design with:
+
 - Dark theme support (auto-detect system preference)
 - Gradient headers and glassmorphic effects
 - Smooth animations and transitions

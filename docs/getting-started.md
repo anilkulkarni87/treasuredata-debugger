@@ -12,14 +12,18 @@ Welcome to the Treasure Data Debugger! This guide will help you install, configu
 The extension is currently available for installation in Developer Mode.
 
 ### Prerequisites
+
 - Google Chrome or Microsoft Edge
 - The extension source code (downloaded or cloned)
 
 ### Steps
+
 1. **Download the code**:
+
    ```bash
    git clone https://github.com/anilkulkarni87/treasuredata-debugger.git
    ```
+
    Or download the ZIP from the repository.
 
 2. **Open Extensions Management**:
@@ -45,6 +49,7 @@ Before you start debugging, it's helpful to configure a few settings.
 3. Click the **Settings** (⚙️) icon in the top right.
 
 ### Recommended Settings
+
 - **TD Hosts**: The default is `treasuredata.com`. If you use a custom domain (CNAME) for tracking, add it here (e.g., `metrics.mysite.com`).
 - **Show Preflight**: Turn this **ON** if you are debugging CORS issues. Turn it **OFF** to reduce noise.
 - **Show Non-TD**: Keep this **OFF** to see only Treasure Data requests.
@@ -53,18 +58,22 @@ Before you start debugging, it's helpful to configure a few settings.
 
 ## 3. Your First Capture
 
+![Main Interface](assets/screenshots/main-interface.png)
+
 Now you're ready to capture data!
 
 1. Navigate to a page that sends data to Treasure Data.
 2. Ensure the **TD Debugger** panel is open.
-3. **Reload the page**. *Note: DevTools only captures network requests that happen while it is open.*
+3. **Reload the page**. _Note: DevTools only captures network requests that happen while it is open._
 
 You should see rows appearing in the table:
+
 - **Green rows (2xx)**: Successful requests.
 - **Red rows (4xx/5xx)**: Failed requests.
 - **Blue rows**: Preflight (OPTIONS) requests (if enabled).
 
 ### Understanding the Table
+
 - **#**: Request sequence number.
 - **Time**: When the request occurred.
 - **Method**: HTTP method (POST, GET, etc.).

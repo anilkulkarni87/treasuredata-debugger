@@ -33,12 +33,12 @@ interface Extractor {
 
 The `request` object passed to both methods contains:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `url` | `string` | The full URL of the request |
-| `method` | `string` | HTTP method (GET, POST, etc.) |
-| `postData` | `string` | The raw request body (for POST/PUT) |
-| `requestHeaders` | `Array` | List of request headers |
+| Property         | Type     | Description                         |
+| ---------------- | -------- | ----------------------------------- |
+| `url`            | `string` | The full URL of the request         |
+| `method`         | `string` | HTTP method (GET, POST, etc.)       |
+| `postData`       | `string` | The raw request body (for POST/PUT) |
+| `requestHeaders` | `Array`  | List of request headers             |
 
 ## Standard Output Format
 
@@ -70,7 +70,7 @@ export const jsonExtractor = {
     } catch (e) {
       return { error: 'Invalid JSON' };
     }
-  }
+  },
 };
 ```
 
@@ -84,8 +84,8 @@ export const queryExtractor = {
     const params = Object.fromEntries(url.searchParams);
     return {
       event: 'pageview',
-      ...params
+      ...params,
     };
-  }
+  },
 };
 ```

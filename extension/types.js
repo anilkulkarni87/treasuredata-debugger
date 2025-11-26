@@ -70,4 +70,4 @@
  * @property {(value: any) => any} summarizeValue - Recursively summarize a value with caps
  */
 
-export { };
+export {};

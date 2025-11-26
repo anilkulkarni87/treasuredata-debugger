@@ -5,9 +5,9 @@
   
   <p><strong>Modern Chrome DevTools Extension for Treasure Data Request Debugging</strong></p>
 
-  [![CI](https://github.com/anilkulkarni87/treasuredata-debugger/workflows/CI/badge.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/actions)
-  [![Version](https://img.shields.io/badge/version-3.1.3-blue.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/releases)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/anilkulkarni87/treasuredata-debugger/actions/workflows/ci.yml/badge.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-3.1.3-blue.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
   <p>
     <a href="#-features">Features</a> •
@@ -21,14 +21,14 @@
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 🔍 **Smart Capture** | Automatically detects and parses Treasure Data requests |
-| 🎯 **Advanced Filters** | Filter by status, database, or Regex search |
-| 🔄 **Comparison** | Side-by-side request comparison with diff highlighting |
-| 💾 **Presets** | Save and load your favorite filter configurations |
-| 🔒 **Privacy First** | Local processing with automatic PII redaction |
-| 🎨 **Modern UI** | Dark mode support, glassmorphism, and responsive design |
+| Feature                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| 🔍 **Smart Capture**    | Automatically detects and parses Treasure Data requests |
+| 🎯 **Advanced Filters** | Filter by status, database, or Regex search             |
+| 🔄 **Comparison**       | Side-by-side request comparison with diff highlighting  |
+| 💾 **Presets**          | Save and load your favorite filter configurations       |
+| 🔒 **Privacy First**    | Local processing with automatic PII redaction           |
+| 🎨 **Modern UI**        | Dark mode support, glassmorphism, and responsive design |
 
 ## 🚀 Quick Start
 
