@@ -101,6 +101,36 @@
         >
       </div>
     </header>
+
+    <!-- Flow Visualization -->
+    <div id="flowVizContainer" class="flow-visualization">
+      <div class="flow-header">
+        <h3>📊 Real-time Flow</h3>
+        <button id="toggleFlowViz" class="btn-icon" aria-label="Toggle flow visualization">
+          Hide
+        </button>
+      </div>
+      <canvas id="flowCanvas"></canvas>
+      <div class="flow-metrics">
+        <div class="metric">
+          <span class="metric-label">Requests/sec</span>
+          <span id="metricRps" class="metric-value">0.0</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Avg Latency</span>
+          <span id="metricLatency" class="metric-value">0ms</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Success Rate</span>
+          <span id="metricSuccess" class="metric-value">100%</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Active</span>
+          <span id="metricActive" class="metric-value">0</span>
+        </div>
+      </div>
+    </div>
+
     <main>
       <!-- Pagination controls -->
       <div

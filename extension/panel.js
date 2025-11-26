@@ -35,6 +35,7 @@ import {
   clearTable,
 } from './modules/rendering.js';
 import { attachNetworkListener } from './modules/network.js';
+import { FlowVisualization } from './modules/flow-viz.js';
 
 /**
  * Get element by ID
@@ -362,6 +363,12 @@ function setupNetworkCapture() {
     extractors,
     async (entry) => {
       state.entries.push(entry);
+
+      // Add to flow visualization
+      if (flowViz) {
+        flowViz.addRequest(entry);
+      }
+
       await renderTable();
       updateDatabaseFilter(state.entries);
     },
@@ -1251,3 +1258,22 @@ loadPrefs();
 loadCustomExtractors();
 loadPrefsUI();
 setupNetworkCapture();
+
+// Initialize flow visualization
+let flowViz = null;
+try {
+  flowViz = new FlowVisualization('flowCanvas');
+  flowViz.start();
+} catch (error) {
+  console.error('Failed to initialize flow visualization:', error);
+}
+
+// Toggle flow visualization
+const toggleFlowVizBtn = $('toggleFlowViz');
+const flowVizContainer = $('flowVizContainer');
+if (toggleFlowVizBtn && flowVizContainer) {
+  toggleFlowVizBtn.addEventListener('click', () => {
+    const isHidden = flowVizContainer.classList.toggle('hidden');
+    toggleFlowVizBtn.textContent = isHidden ? 'Show' : 'Hide';
+  });
+}
