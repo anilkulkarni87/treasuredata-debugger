@@ -3,17 +3,23 @@ layout: default
 title: Home
 ---
 
-# Treasure Data Debugger
+<div align="center">
+  <img src="assets/images/logo.png" alt="TD Debugger" width="128"/>
+  
+  <h1>Treasure Data Debugger</h1>
+  
+  <p><strong>Modern Chrome DevTools Extension for Treasure Data Request Debugging</strong></p>
 
-**Modern Chrome DevTools Extension for Treasure Data Request Debugging**
+  <p>
+    <img src="https://github.com/anilkulkarni87/treasuredata-debugger/actions/workflows/ci.yml/badge.svg" alt="CI"/>
+    <img src="https://img.shields.io/badge/version-3.1.3-blue.svg" alt="Version"/>
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"/>
+  </p>
+</div>
 
-A powerful, privacy-first Chrome/Edge DevTools panel for inspecting and debugging Treasure Data browser SDK network calls. Built with Manifest V3, featuring advanced filtering, request comparison, and a modern UI.
+A powerful, privacy-first Chrome/Edge DevTools panel for inspecting and debugging Treasure Data browser SDK network calls. Built with Manifest V3, featuring advanced filtering, request comparison, real-time visualization, and a modern UI.
 
 ---
-
-## ✨ Key Features
-
-![Main Interface](assets/screenshots/main-interface.png)
 
 ## ✨ Key Features
 
