@@ -10,117 +10,6 @@
       rel="stylesheet"
       href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}"
     />
-    <style>
-      .site-header {
-        background-color: #1e293b;
-        background-image: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      }
-
-      .site-header h1 {
-        font-weight: 700;
-        letter-spacing: -0.5px;
-      }
-
-      .site-header h2 {
-        opacity: 0.8;
-        font-weight: 400;
-      }
-
-      .btn {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: all 0.2s;
-      }
-
-      .btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: translateY(-1px);
-      }
-
-      /* Navigation */
-      .nav-menu {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-top: 2rem;
-        justify-content: center;
-      }
-
-      .nav-link {
-        color: rgba(255, 255, 255, 0.8);
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 0.95rem;
-        padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        transition: all 0.2s;
-      }
-
-      .nav-link:hover,
-      .nav-link.active {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      /* Content */
-      .main-content h1,
-      .main-content h2,
-      .main-content h3 {
-        color: #1e293b;
-      }
-
-      .main-content img {
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-
-      code {
-        background-color: #f1f5f9;
-        padding: 0.2em 0.4em;
-        border-radius: 4px;
-        font-size: 85%;
-      }
-
-      pre code {
-        background-color: transparent;
-        padding: 0;
-      }
-
-      /* Features Grid */
-      .features-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-      }
-
-      .feature-card {
-        background: #fff;
-        padding: 1.5rem;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s;
-      }
-
-      .feature-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .feature-icon {
-        font-size: 2rem;
-        margin-bottom: 1rem;
-        display: block;
-      }
-
-      /* Footer */
-      .site-footer {
-        border-top: 1px solid #e2e8f0;
-        margin-top: 4rem;
-        padding-top: 2rem;
-      }
-    </style>
   </head>
 
   <body>
@@ -162,8 +51,8 @@
         <footer class="site-footer">
           {% if site.github.is_project_page %}
           <span class="site-footer-owner"
-            ><a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a> is
-            maintained by
+            ><a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a>
+            is maintained by
             <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.</span
           >
           {% endif %}
