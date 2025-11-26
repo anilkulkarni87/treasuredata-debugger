@@ -1,193 +1,289 @@
 <!doctype html>
 <html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Treasure Data Debugger (MV3)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
 
-<head>
-  <meta charset="utf-8" />
-  <title>Treasure Data Debugger (MV3)</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
+  <body>
+    <header>
+      <h1>Treasure Data Debugger</h1>
+      <div class="controls">
+        <label
+          >TD Hosts (comma-separated):
+          <input
+            id="hosts"
+            type="text"
+            placeholder="in.treasuredata.com"
+            aria-label="Treasure Data host suffixes to monitor, comma-separated"
+        /></label>
+        <label title="Also show all non-TD requests (debug)"
+          ><input id="showNonTD" type="checkbox" aria-label="Show non-Treasure Data requests" />
+          Show non-TD</label
+        >
+        <label title="Include CORS preflight (OPTIONS)"
+          ><input
+            id="showPreflight"
+            type="checkbox"
+            aria-label="Show CORS preflight OPTIONS requests"
+          />
+          Show preflights</label
+        >
+        <span class="spacer"></span>
 
-<body>
-  <header>
-    <h1>Treasure Data Debugger</h1>
-    <div class="controls">
-      <label>TD Hosts (comma-separated):
-        <input id="hosts" type="text" placeholder="in.treasuredata.com"
-          aria-label="Treasure Data host suffixes to monitor, comma-separated" /></label>
-      <label title="Also show all non-TD requests (debug)"><input id="showNonTD" type="checkbox"
-          aria-label="Show non-Treasure Data requests" /> Show
-        non-TD</label>
-      <label title="Include CORS preflight (OPTIONS)"><input id="showPreflight" type="checkbox"
-          aria-label="Show CORS preflight OPTIONS requests" />
-        Show preflights</label>
-      <span class="spacer"></span>
+        <!-- Advanced Filters -->
+        <select id="statusFilter" aria-label="Filter by status code">
+          <option value="">All Status</option>
+          <option value="2xx">2xx Success</option>
+          <option value="3xx">3xx Redirect</option>
+          <option value="4xx">4xx Client Error</option>
+          <option value="5xx">5xx Server Error</option>
+        </select>
 
-      <!-- Advanced Filters -->
-      <select id="statusFilter" aria-label="Filter by status code">
-        <option value="">All Status</option>
-        <option value="2xx">2xx Success</option>
-        <option value="3xx">3xx Redirect</option>
-        <option value="4xx">4xx Client Error</option>
-        <option value="5xx">5xx Server Error</option>
-      </select>
+        <select id="dbFilter" aria-label="Filter by database">
+          <option value="">All Databases</option>
+        </select>
 
-      <select id="dbFilter" aria-label="Filter by database">
-        <option value="">All Databases</option>
-      </select>
+        <input
+          id="filter"
+          type="search"
+          placeholder="Filter URL or payload…"
+          aria-label="Filter requests by URL or payload content"
+        />
 
-      <input id="filter" type="search" placeholder="Filter URL or payload…"
-        aria-label="Filter requests by URL or payload content" />
+        <label title="Use regex in filter">
+          <input id="regexFilter" type="checkbox" aria-label="Use regular expression in filter" />
+          Regex
+        </label>
 
-      <label title="Use regex in filter">
-        <input id="regexFilter" type="checkbox" aria-label="Use regular expression in filter" />
-        Regex
-      </label>
+        <button id="clearFilters" class="btn" aria-label="Clear all filters">Clear Filters</button>
 
-      <button id="clearFilters" class="btn" aria-label="Clear all filters">Clear Filters</button>
+        <button id="saveFilterPreset" class="btn" aria-label="Save current filter as preset">
+          💾 Save Filter
+        </button>
 
-      <button id="saveFilterPreset" class="btn" aria-label="Save current filter as preset">💾 Save Filter</button>
+        <select id="filterPresets" aria-label="Load saved filter preset">
+          <option value="">Load Preset...</option>
+        </select>
 
-      <select id="filterPresets" aria-label="Load saved filter preset">
-        <option value="">Load Preset...</option>
-      </select>
+        <span class="spacer"></span>
 
-      <span class="spacer"></span>
-
-      <label title="Mask emails & tokens in payload"><input id="redact" type="checkbox"
-          aria-label="Enable PII redaction in displayed data" />
-        Redact PII</label>
-      <button id="exportCsv" class="btn" aria-label="Export captured requests as CSV file">
-        Export CSV
-      </button>
-      <button id="exportJson" class="btn" aria-label="Export captured requests as JSON file">
-        Export JSON
-      </button>
-      <button id="settingsBtn" class="btn" aria-label="Open settings modal to configure extractors">
-        Settings
-      </button>
-      <button id="importBtn" class="btn" aria-label="Import settings from JSON file">Import</button>
-      <button id="exportBtn" class="btn" aria-label="Export settings to JSON file">Export</button>
-      <button id="clearBtn" class="btn" aria-label="Clear all captured requests from table">
-        Clear
-      </button>
-      <small>Open DevTools on the target page for capture. —
-        <a href="#" id="openRedact" aria-label="Open redaction rules editor">Redaction Rules</a></small>
-    </div>
-  </header>
-  <main>
-    <!-- Pagination controls -->
-    <div id="paginationControls" style="display: flex; gap: 8px; margin: 8px 0; align-items: center;">
-      <button id="prevPage" class="btn">← Previous</button>
-      <span id="paginationInfo" style="display: none;"></span>
-      <button id="nextPage" class="btn">Next →</button>
-      <select id="pageSize" aria-label="Entries per page">
-        <option value="50">50 per page</option>
-        <option value="100" selected>100 per page</option>
-        <option value="200">200 per page</option>
-        <option value="500">500 per page</option>
-      </select>
-    </div>
-
-    <!-- Comparison controls -->
-    <div style="display: flex; gap: 8px; margin: 8px 0; align-items: center;">
-      <button id="compareBtn" class="btn" aria-label="Compare selected requests" disabled>
-        🔍 Compare Selected (0)
-      </button>
-      <small class="text-muted">Select 2 requests to compare</small>
-    </div>
-
-    <table id="reqTable" role="table" aria-label="Captured Treasure Data network requests">
-      <thead>
-        <tr role="row">
-          <th role="columnheader" scope="col" style="width: 40px;">
-            <input type="checkbox" id="selectAll" aria-label="Select all requests" />
-          </th>
-          <th role="columnheader" scope="col">#</th>
-          <th role="columnheader" scope="col">Time</th>
-          <th role="columnheader" scope="col">Method</th>
-          <th role="columnheader" scope="col">URL</th>
-          <th role="columnheader" scope="col">Status</th>
-          <th role="columnheader" scope="col">Content-Type</th>
-          <th role="columnheader" scope="col">Parsed Payload (key fields)</th>
-          <th role="columnheader" scope="col">Headers</th>
-        </tr>
-      </thead>
-      <tbody id="reqBody" role="rowgroup"></tbody>
-    </table>
-  </main>
-  <template id="rowTemplate">
-    <tr>
-      <td class="compare-checkbox-cell">
-        <input type="checkbox" class="compare-checkbox" aria-label="Select for comparison" />
-      </td>
-      <td class="idx"></td>
-      <td class="time"></td>
-      <td class="method"></td>
-      <td class="url"></td>
-      <td class="status"></td>
-      <td class="ct"></td>
-      <td class="parsed"></td>
-      <td class="headers-cell"></td>
-    </tr>
-  </template>
-  <input id="importFile" type="file" accept=".json" style="display: none" />
-
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="modal" role="dialog" aria-labelledby="settingsTitle" aria-modal="true">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h2 id="settingsTitle">⚙️ Settings</h2>
-        <button class="modal-close" id="settingsCloseBtn" aria-label="Close settings modal">&times;</button>
+        <label title="Mask emails & tokens in payload"
+          ><input id="redact" type="checkbox" aria-label="Enable PII redaction in displayed data" />
+          Redact PII</label
+        >
+        <button id="exportCsv" class="btn" aria-label="Export captured requests as CSV file">
+          Export CSV
+        </button>
+        <button id="exportJson" class="btn" aria-label="Export captured requests as JSON file">
+          Export JSON
+        </button>
+        <button
+          id="settingsBtn"
+          class="btn"
+          aria-label="Open settings modal to configure extractors"
+        >
+          Settings
+        </button>
+        <button id="importBtn" class="btn" aria-label="Import settings from JSON file">
+          Import
+        </button>
+        <button id="exportBtn" class="btn" aria-label="Export settings to JSON file">Export</button>
+        <button id="clearBtn" class="btn" aria-label="Clear all captured requests from table">
+          Clear
+        </button>
+        <small
+          >Open DevTools on the target page for capture. —
+          <a href="#" id="openRedact" aria-label="Open redaction rules editor"
+            >Redaction Rules</a
+          ></small
+        >
       </div>
-      <div class="modal-body">
-        <p style="margin-bottom: 12px; color: var(--text-secondary);">
-          Customize keys of interest per extractor (e.g., <code>td-events</code>, <code>td-records</code>).
-        </p>
-        <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-          <strong style="display: block; margin-bottom: 8px; font-size: 13px;">Example Configuration:</strong>
-          <pre style="
-            background: var(--bg-primary);
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            overflow: auto;
-            max-height: 140px;
-            margin: 0;
-            font-size: 12px;
-          ">{ "td-events": { "keys": ["td_client_id","td_global_id","td_title","td_url"], "includeAll": true } }</pre>
+    </header>
+
+    <!-- Flow Visualization -->
+    <div id="flowVizContainer" class="flow-visualization">
+      <div class="flow-header">
+        <h3>📊 Real-time Flow</h3>
+        <button id="toggleFlowViz" class="btn-icon" aria-label="Toggle flow visualization">
+          Hide
+        </button>
+      </div>
+      <canvas id="flowCanvas"></canvas>
+      <div class="flow-metrics">
+        <div class="metric">
+          <span class="metric-label">Requests/sec</span>
+          <span id="metricRps" class="metric-value">0.0</span>
         </div>
-        <textarea id="settingsJson" style="
-          width: 100%;
-          height: 200px;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-          padding: 12px;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          background: var(--bg-secondary);
-          color: var(--text-primary);
-          resize: vertical;
-        "></textarea>
-      </div>
-      <div class="modal-footer">
-        <button id="settingsCancel" class="btn">Cancel</button>
-        <button id="settingsSave" class="btn btn-primary">Save Settings</button>
+        <div class="metric">
+          <span class="metric-label">Avg Latency</span>
+          <span id="metricLatency" class="metric-value">0ms</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Success Rate</span>
+          <span id="metricSuccess" class="metric-value">100%</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Active</span>
+          <span id="metricActive" class="metric-value">0</span>
+        </div>
       </div>
     </div>
-  </div>
-  <!-- Redact Modal -->
-  <div id="redactModal" class="modal" role="dialog" aria-labelledby="redactTitle" aria-modal="true">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="redactTitle">Redaction Rules</h2>
-        <button class="modal-close" id="redactCloseBtn" aria-label="Close redaction settings">&times;</button>
+
+    <main>
+      <!-- Pagination controls -->
+      <div
+        id="paginationControls"
+        style="display: flex; gap: 8px; margin: 8px 0; align-items: center"
+      >
+        <button id="prevPage" class="btn">← Previous</button>
+        <span id="paginationInfo" style="display: none"></span>
+        <button id="nextPage" class="btn">Next →</button>
+        <select id="pageSize" aria-label="Entries per page">
+          <option value="50">50 per page</option>
+          <option value="100" selected>100 per page</option>
+          <option value="200">200 per page</option>
+          <option value="500">500 per page</option>
+        </select>
       </div>
-      <div class="modal-body">
-        <p style="margin-bottom: 12px; color: var(--text-secondary);">
-          Add custom <strong>Regex patterns</strong> to redact sensitive values (one per line).
-          <br>
-          <small>Example: <code>\buser_\d+\b</code> or <code>[a-f0-9]{32}</code></small>
-        </p>
-        <textarea id="redactRules" placeholder="Enter regex patterns here..." style="
+
+      <!-- Comparison controls -->
+      <div style="display: flex; gap: 8px; margin: 8px 0; align-items: center">
+        <button id="compareBtn" class="btn" aria-label="Compare selected requests" disabled>
+          🔍 Compare Selected (0)
+        </button>
+        <small class="text-muted">Select 2 requests to compare</small>
+      </div>
+
+      <table id="reqTable" role="table" aria-label="Captured Treasure Data network requests">
+        <thead>
+          <tr role="row">
+            <th role="columnheader" scope="col" style="width: 40px">
+              <input type="checkbox" id="selectAll" aria-label="Select all requests" />
+            </th>
+            <th role="columnheader" scope="col">#</th>
+            <th role="columnheader" scope="col">Time</th>
+            <th role="columnheader" scope="col">Method</th>
+            <th role="columnheader" scope="col">URL</th>
+            <th role="columnheader" scope="col">Status</th>
+            <th role="columnheader" scope="col">Content-Type</th>
+            <th role="columnheader" scope="col">Parsed Payload (key fields)</th>
+            <th role="columnheader" scope="col">Headers</th>
+          </tr>
+        </thead>
+        <tbody id="reqBody" role="rowgroup"></tbody>
+      </table>
+    </main>
+    <template id="rowTemplate">
+      <tr>
+        <td class="compare-checkbox-cell">
+          <input type="checkbox" class="compare-checkbox" aria-label="Select for comparison" />
+        </td>
+        <td class="idx"></td>
+        <td class="time"></td>
+        <td class="method"></td>
+        <td class="url"></td>
+        <td class="status"></td>
+        <td class="ct"></td>
+        <td class="parsed"></td>
+        <td class="headers-cell"></td>
+      </tr>
+    </template>
+    <input id="importFile" type="file" accept=".json" style="display: none" />
+
+    <!-- Settings Modal -->
+    <div
+      id="settingsModal"
+      class="modal"
+      role="dialog"
+      aria-labelledby="settingsTitle"
+      aria-modal="true"
+    >
+      <div class="modal-content" style="max-width: 700px">
+        <div class="modal-header">
+          <h2 id="settingsTitle">⚙️ Settings</h2>
+          <button class="modal-close" id="settingsCloseBtn" aria-label="Close settings modal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 12px; color: var(--text-secondary)">
+            Customize keys of interest per extractor (e.g., <code>td-events</code>,
+            <code>td-records</code>).
+          </p>
+          <div
+            style="
+              background: var(--bg-secondary);
+              padding: 12px;
+              border-radius: 8px;
+              margin-bottom: 16px;
+            "
+          >
+            <strong style="display: block; margin-bottom: 8px; font-size: 13px"
+              >Example Configuration:</strong
+            >
+            <pre
+              style="
+                background: var(--bg-primary);
+                padding: 8px;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                overflow: auto;
+                max-height: 140px;
+                margin: 0;
+                font-size: 12px;
+              "
+            >
+{ "td-events": { "keys": ["td_client_id","td_global_id","td_title","td_url"], "includeAll": true } }</pre
+            >
+          </div>
+          <textarea
+            id="settingsJson"
+            style="
+              width: 100%;
+              height: 200px;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+              padding: 12px;
+              border: 1px solid var(--border-color);
+              border-radius: var(--radius-md);
+              background: var(--bg-secondary);
+              color: var(--text-primary);
+              resize: vertical;
+            "
+          ></textarea>
+        </div>
+        <div class="modal-footer">
+          <button id="settingsCancel" class="btn">Cancel</button>
+          <button id="settingsSave" class="btn btn-primary">Save Settings</button>
+        </div>
+      </div>
+    </div>
+    <!-- Redact Modal -->
+    <div
+      id="redactModal"
+      class="modal"
+      role="dialog"
+      aria-labelledby="redactTitle"
+      aria-modal="true"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="redactTitle">Redaction Rules</h2>
+          <button class="modal-close" id="redactCloseBtn" aria-label="Close redaction settings">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 12px; color: var(--text-secondary)">
+            Add custom <strong>Regex patterns</strong> to redact sensitive values (one per line).
+            <br />
+            <small>Example: <code>\buser_\d+\b</code> or <code>[a-f0-9]{32}</code></small>
+          </p>
+          <textarea
+            id="redactRules"
+            placeholder="Enter regex patterns here..."
+            style="
               width: 100%;
               height: 250px;
               font-family: 'SF Mono', Monaco, monospace;
@@ -197,185 +293,373 @@
               background: var(--bg-secondary);
               color: var(--text-primary);
               resize: vertical;
-            "></textarea>
-        <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
-          Note: These rules apply in addition to the built-in email/token rules.
+            "
+          ></textarea>
+          <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted)">
+            Note: These rules apply in addition to the built-in email/token rules.
+          </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button id="redactCancel" class="btn">Cancel</button>
-        <button id="redactSave" class="btn btn-primary">Save Rules</button>
+        <div class="modal-footer">
+          <button id="redactCancel" class="btn">Cancel</button>
+          <button id="redactSave" class="btn btn-primary">Save Rules</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Headers Modal -->
-  <div id="headersModal" class="modal" role="dialog" aria-labelledby="headersTitle" aria-modal="true">
-    <div class="modal-content" style="max-width: 800px;">
-      <div class="modal-header">
-        <h2 id="headersTitle" style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 20px;">📋</span> Request/Response Headers
-        </h2>
-        <button class="modal-close" id="headersCloseBtn" aria-label="Close headers modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div style="margin-bottom: 24px;">
-          <h4
-            style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-            <span>📤</span> Request Headers
-          </h4>
-          <div
-            style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; max-height: 250px; overflow-y: auto;">
-            <div id="requestHeadersList" class="headers-list font-mono text-small"></div>
+    <!-- Headers Modal -->
+    <div
+      id="headersModal"
+      class="modal"
+      role="dialog"
+      aria-labelledby="headersTitle"
+      aria-modal="true"
+    >
+      <div class="modal-content" style="max-width: 800px">
+        <div class="modal-header">
+          <h2 id="headersTitle" style="display: flex; align-items: center; gap: 8px">
+            <span style="font-size: 20px">📋</span> Request/Response Headers
+          </h2>
+          <button class="modal-close" id="headersCloseBtn" aria-label="Close headers modal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom: 24px">
+            <h4
+              style="
+                margin: 0 0 12px;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span>📤</span> Request Headers
+            </h4>
+            <div
+              style="
+                background: var(--bg-secondary);
+                padding: 12px;
+                border-radius: 8px;
+                max-height: 250px;
+                overflow-y: auto;
+              "
+            >
+              <div id="requestHeadersList" class="headers-list font-mono text-small"></div>
+            </div>
+          </div>
+
+          <div>
+            <h4
+              style="
+                margin: 0 0 12px;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span>📥</span> Response Headers
+            </h4>
+            <div
+              style="
+                background: var(--bg-secondary);
+                padding: 12px;
+                border-radius: 8px;
+                max-height: 250px;
+                overflow-y: auto;
+              "
+            >
+              <div id="responseHeadersList" class="headers-list font-mono text-small"></div>
+            </div>
           </div>
         </div>
-
-        <div>
-          <h4
-            style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-            <span>📥</span> Response Headers
-          </h4>
-          <div
-            style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; max-height: 250px; overflow-y: auto;">
-            <div id="responseHeadersList" class="headers-list font-mono text-small"></div>
-          </div>
+        <div class="modal-footer">
+          <button id="headersClose" class="btn">Close</button>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button id="headersClose" class="btn">Close</button>
       </div>
     </div>
-  </div>
 
-  <!-- Comparison Modal -->
-  <div id="comparisonModal" class="modal" role="dialog" aria-labelledby="comparisonTitle" aria-modal="true">
-    <div class="modal-content" style="max-width: 1400px; max-height: 90vh;">
-      <div class="modal-header">
-        <h2 id="comparisonTitle" style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 20px;">🔍</span> Request Comparison
-        </h2>
-        <button class="modal-close" aria-label="Close comparison modal">&times;</button>
-      </div>
-      <div class="modal-body" style="overflow-y: auto; max-height: calc(90vh - 120px);">
-        <!-- Summary Cards -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-          <!-- Request 1 Summary -->
+    <!-- Comparison Modal -->
+    <div
+      id="comparisonModal"
+      class="modal"
+      role="dialog"
+      aria-labelledby="comparisonTitle"
+      aria-modal="true"
+    >
+      <div class="modal-content" style="max-width: 1400px; max-height: 90vh">
+        <div class="modal-header">
+          <h2 id="comparisonTitle" style="display: flex; align-items: center; gap: 8px">
+            <span style="font-size: 20px">🔍</span> Request Comparison
+          </h2>
+          <button class="modal-close" aria-label="Close comparison modal">&times;</button>
+        </div>
+        <div class="modal-body" style="overflow-y: auto; max-height: calc(90vh - 120px)">
+          <!-- Summary Cards -->
           <div
-            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 16px; font-weight: 600;">
-                Request #<span id="comp1Idx"></span>
-              </h3>
-              <span id="comp1Status" class="badge"
-                style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);"></span>
-            </div>
-            <div style="display: grid; gap: 8px; font-size: 13px;">
-              <div style="display: flex; gap: 8px;">
-                <strong style="min-width: 80px; opacity: 0.9;">Method:</strong>
-                <span id="comp1Method" class="font-mono"
-                  style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px;"></span>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <strong style="min-width: 80px; opacity: 0.9;">Time:</strong>
-                <span id="comp1Time" class="font-mono" style="opacity: 0.95;"></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Request 2 Summary -->
-          <div
-            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 16px; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 16px; font-weight: 600;">
-                Request #<span id="comp2Idx"></span>
-              </h3>
-              <span id="comp2Status" class="badge"
-                style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);"></span>
-            </div>
-            <div style="display: grid; gap: 8px; font-size: 13px;">
-              <div style="display: flex; gap: 8px;">
-                <strong style="min-width: 80px; opacity: 0.9;">Method:</strong>
-                <span id="comp2Method" class="font-mono"
-                  style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px;"></span>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <strong style="min-width: 80px; opacity: 0.9;">Time:</strong>
-                <span id="comp2Time" class="font-mono" style="opacity: 0.95;"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- URLs Comparison -->
-        <div style="margin-bottom: 24px;">
-          <h4
-            style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-            <span>🔗</span> URLs
-          </h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px"
+          >
+            <!-- Request 1 Summary -->
             <div
-              style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; border-left: 3px solid #667eea;">
-              <div id="comp1Url" class="font-mono text-small" style="word-break: break-all; line-height: 1.6;"></div>
-            </div>
-            <div
-              style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; border-left: 3px solid #f5576c;">
-              <div id="comp2Url" class="font-mono text-small" style="word-break: break-all; line-height: 1.6;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Headers Comparison -->
-        <div style="margin-bottom: 24px;">
-          <h4
-            style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-            <span>📋</span> Request Headers
-          </h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div
-              style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
-              <pre id="comp1Headers" class="font-mono text-small"
-                style="margin: 0; background: none; border: none; padding: 0; font-size: 11px;"></pre>
-            </div>
-            <div
-              style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
-              <pre id="comp2Headers" class="font-mono text-small"
-                style="margin: 0; background: none; border: none; padding: 0; font-size: 11px;"></pre>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payloads Comparison -->
-        <div>
-          <h4
-            style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-            <span>📦</span> Payloads
-          </h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div>
+              style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 16px;
+                border-radius: 12px;
+                color: white;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+              "
+            >
               <div
-                style="background: linear-gradient(90deg, #667eea 0%, transparent 100%); height: 3px; border-radius: 2px; margin-bottom: 8px;">
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 12px;
+                "
+              >
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600">
+                  Request #<span id="comp1Idx"></span>
+                </h3>
+                <span
+                  id="comp1Status"
+                  class="badge"
+                  style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                  "
+                ></span>
               </div>
-              <pre id="comp1Payload" style="max-height: 500px; overflow: auto; margin: 0; font-size: 11px;"></pre>
+              <div style="display: grid; gap: 8px; font-size: 13px">
+                <div style="display: flex; gap: 8px">
+                  <strong style="min-width: 80px; opacity: 0.9">Method:</strong>
+                  <span
+                    id="comp1Method"
+                    class="font-mono"
+                    style="
+                      background: rgba(255, 255, 255, 0.15);
+                      padding: 2px 8px;
+                      border-radius: 4px;
+                    "
+                  ></span>
+                </div>
+                <div style="display: flex; gap: 8px">
+                  <strong style="min-width: 80px; opacity: 0.9">Time:</strong>
+                  <span id="comp1Time" class="font-mono" style="opacity: 0.95"></span>
+                </div>
+              </div>
             </div>
-            <div>
+
+            <!-- Request 2 Summary -->
+            <div
+              style="
+                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                padding: 16px;
+                border-radius: 12px;
+                color: white;
+                box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+              "
+            >
               <div
-                style="background: linear-gradient(90deg, #f5576c 0%, transparent 100%); height: 3px; border-radius: 2px; margin-bottom: 8px;">
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 12px;
+                "
+              >
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600">
+                  Request #<span id="comp2Idx"></span>
+                </h3>
+                <span
+                  id="comp2Status"
+                  class="badge"
+                  style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                  "
+                ></span>
               </div>
-              <pre id="comp2Payload" style="max-height: 500px; overflow: auto; margin: 0; font-size: 11px;"></pre>
+              <div style="display: grid; gap: 8px; font-size: 13px">
+                <div style="display: flex; gap: 8px">
+                  <strong style="min-width: 80px; opacity: 0.9">Method:</strong>
+                  <span
+                    id="comp2Method"
+                    class="font-mono"
+                    style="
+                      background: rgba(255, 255, 255, 0.15);
+                      padding: 2px 8px;
+                      border-radius: 4px;
+                    "
+                  ></span>
+                </div>
+                <div style="display: flex; gap: 8px">
+                  <strong style="min-width: 80px; opacity: 0.9">Time:</strong>
+                  <span id="comp2Time" class="font-mono" style="opacity: 0.95"></span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Difference Indicator -->
-        <div id="compDiffIndicator" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;">
-          <strong>Differences detected:</strong>
-          <ul id="compDiffList" style="margin: 8px 0 0; padding-left: 20px;"></ul>
+          <!-- URLs Comparison -->
+          <div style="margin-bottom: 24px">
+            <h4
+              style="
+                margin: 0 0 12px;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span>🔗</span> URLs
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+              <div
+                style="
+                  background: var(--bg-secondary);
+                  padding: 12px;
+                  border-radius: 8px;
+                  border-left: 3px solid #667eea;
+                "
+              >
+                <div
+                  id="comp1Url"
+                  class="font-mono text-small"
+                  style="word-break: break-all; line-height: 1.6"
+                ></div>
+              </div>
+              <div
+                style="
+                  background: var(--bg-secondary);
+                  padding: 12px;
+                  border-radius: 8px;
+                  border-left: 3px solid #f5576c;
+                "
+              >
+                <div
+                  id="comp2Url"
+                  class="font-mono text-small"
+                  style="word-break: break-all; line-height: 1.6"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Headers Comparison -->
+          <div style="margin-bottom: 24px">
+            <h4
+              style="
+                margin: 0 0 12px;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span>📋</span> Request Headers
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+              <div
+                style="
+                  background: var(--bg-secondary);
+                  padding: 12px;
+                  border-radius: 8px;
+                  max-height: 200px;
+                  overflow-y: auto;
+                "
+              >
+                <pre
+                  id="comp1Headers"
+                  class="font-mono text-small"
+                  style="margin: 0; background: none; border: none; padding: 0; font-size: 11px"
+                ></pre>
+              </div>
+              <div
+                style="
+                  background: var(--bg-secondary);
+                  padding: 12px;
+                  border-radius: 8px;
+                  max-height: 200px;
+                  overflow-y: auto;
+                "
+              >
+                <pre
+                  id="comp2Headers"
+                  class="font-mono text-small"
+                  style="margin: 0; background: none; border: none; padding: 0; font-size: 11px"
+                ></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payloads Comparison -->
+          <div>
+            <h4
+              style="
+                margin: 0 0 12px;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span>📦</span> Payloads
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+              <div>
+                <div
+                  style="
+                    background: linear-gradient(90deg, #667eea 0%, transparent 100%);
+                    height: 3px;
+                    border-radius: 2px;
+                    margin-bottom: 8px;
+                  "
+                ></div>
+                <pre
+                  id="comp1Payload"
+                  style="max-height: 500px; overflow: auto; margin: 0; font-size: 11px"
+                ></pre>
+              </div>
+              <div>
+                <div
+                  style="
+                    background: linear-gradient(90deg, #f5576c 0%, transparent 100%);
+                    height: 3px;
+                    border-radius: 2px;
+                    margin-bottom: 8px;
+                  "
+                ></div>
+                <pre
+                  id="comp2Payload"
+                  style="max-height: 500px; overflow: auto; margin: 0; font-size: 11px"
+                ></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Difference Indicator -->
+          <div
+            id="compDiffIndicator"
+            style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none"
+          >
+            <strong>Differences detected:</strong>
+            <ul id="compDiffList" style="margin: 8px 0 0; padding-left: 20px"></ul>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script type="module" src="panel.js"></script>
-</body>
-
+    <script type="module" src="panel.js"></script>
+  </body>
 </html>

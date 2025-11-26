@@ -5,6 +5,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 ## Development Setup
 
 ### Prerequisites
+
 - Node.js 18 or higher
 - Chrome or Edge browser
 - Git
@@ -12,12 +13,14 @@ Thank you for your interest in contributing! This document provides guidelines f
 ### Getting Started
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/treasuredata-debugger.git
    cd treasuredata-debugger
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -42,6 +45,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 ## Code Style
 
 ### JavaScript
+
 - Use ES2022+ features (modules, async/await, etc.)
 - Follow ESLint rules (run `npm run lint`)
 - Format with Prettier (run `npm run format`)
@@ -49,12 +53,14 @@ Thank you for your interest in contributing! This document provides guidelines f
 - Use descriptive variable names
 
 ### File Organization
+
 - `extension/` - Extension source code
 - `test/` - Test files (Vitest)
 - `docs/` - Documentation and assets
 - `.github/workflows/` - CI/CD workflows
 
 ### Naming Conventions
+
 - Files: `kebab-case.js`
 - Functions: `camelCase()`
 - Constants: `UPPER_SNAKE_CASE`
@@ -63,6 +69,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 ## Testing
 
 ### Running Tests
+
 ```bash
 # Run all tests
 npm test
@@ -75,6 +82,7 @@ npm run test:coverage
 ```
 
 ### Writing Tests
+
 - Place tests in `test/` directory
 - Name test files `*.test.js`
 - Use descriptive test names
@@ -82,6 +90,7 @@ npm run test:coverage
 - Aim for 70%+ code coverage
 
 ### Test Structure
+
 ```javascript
 import { describe, it, expect } from 'vitest';
 
@@ -89,10 +98,10 @@ describe('feature name', () => {
   it('should do something specific', () => {
     // Arrange
     const input = 'test';
-    
+
     // Act
     const result = myFunction(input);
-    
+
     // Assert
     expect(result).toBe('expected');
   });
@@ -102,6 +111,7 @@ describe('feature name', () => {
 ## Pull Request Process
 
 ### Before Submitting
+
 1. ✅ Run tests: `npm test`
 2. ✅ Run linter: `npm run lint`
 3. ✅ Format code: `npm run format`
@@ -110,6 +120,7 @@ describe('feature name', () => {
 6. ✅ Update CHANGELOG.md
 
 ### PR Guidelines
+
 - **Title**: Use clear, descriptive titles
   - ✅ "Add keyboard navigation to modals"
   - ❌ "Fix bug"
@@ -122,22 +133,27 @@ describe('feature name', () => {
 - **Documentation**: Update docs if behavior changes
 
 ### PR Template
+
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Tests pass locally
 - [ ] Added new tests
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Documentation updated
@@ -157,6 +173,7 @@ footer (optional)
 ```
 
 ### Types
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -166,6 +183,7 @@ footer (optional)
 - `chore`: Maintenance tasks
 
 ### Examples
+
 ```
 feat(parser): add support for NDJSON format
 
@@ -179,6 +197,7 @@ test(panel): add tests for URL matching logic
 ## Code Review
 
 ### What We Look For
+
 - ✅ Code quality and readability
 - ✅ Test coverage
 - ✅ Documentation
@@ -187,6 +206,7 @@ test(panel): add tests for URL matching logic
 - ✅ Accessibility compliance
 
 ### Review Process
+
 1. Automated checks run (CI)
 2. Maintainer reviews code
 3. Feedback provided
@@ -196,7 +216,9 @@ test(panel): add tests for URL matching logic
 ## Reporting Issues
 
 ### Bug Reports
+
 Include:
+
 - Extension version
 - Browser and version
 - Steps to reproduce
@@ -205,7 +227,9 @@ Include:
 - Console errors
 
 ### Feature Requests
+
 Include:
+
 - Use case description
 - Proposed solution
 - Alternative solutions considered
@@ -221,6 +245,7 @@ Include:
 ## Code of Conduct
 
 ### Our Standards
+
 - Be respectful and inclusive
 - Welcome newcomers
 - Accept constructive criticism
@@ -228,6 +253,7 @@ Include:
 - Show empathy towards others
 
 ### Unacceptable Behavior
+
 - Harassment or discrimination
 - Trolling or insulting comments
 - Personal or political attacks

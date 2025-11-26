@@ -9,9 +9,9 @@
  * @returns {boolean} True if JSON-like
  */
 export function isJsonLike(ct) {
-    if (!ct) return false;
-    const v = ct.toLowerCase();
-    return v.includes('application/json') || v.includes('text/json') || /\+json\b/.test(v);
+  if (!ct) return false;
+  const v = ct.toLowerCase();
+  return v.includes('application/json') || v.includes('text/json') || /\+json\b/.test(v);
 }
 
 /**
@@ -20,13 +20,13 @@ export function isJsonLike(ct) {
  * @returns {string} Masked value
  */
 export function maskAuthorization(v) {
-    if (!v || typeof v !== 'string') return v;
-    const parts = v.split(/\s+/);
-    if (parts.length < 2) return '****';
-    const scheme = parts[0];
-    const token = parts.slice(1).join(' ');
-    const vis = token.slice(0, 8);
-    return `${scheme} ${vis}… (masked)`;
+  if (!v || typeof v !== 'string') return v;
+  const parts = v.split(/\s+/);
+  if (parts.length < 2) return '****';
+  const scheme = parts[0];
+  const token = parts.slice(1).join(' ');
+  const vis = token.slice(0, 8);
+  return `${scheme} ${vis}… (masked)`;
 }
 
 /**
@@ -36,44 +36,44 @@ export function maskAuthorization(v) {
  * @returns {object} Extracted metadata
  */
 export function extractTDInfo(url, headersList) {
-    const out = {};
-    try {
-        const u = new URL(url);
-        out.host = u.host;
-        out.pathname = u.pathname || '';
-        out.query = Object.fromEntries(u.searchParams.entries());
+  const out = {};
+  try {
+    const u = new URL(url);
+    out.host = u.host;
+    out.pathname = u.pathname || '';
+    out.query = Object.fromEntries(u.searchParams.entries());
 
-        const parts = out.pathname.replace(/^\/+/, '').split('/');
-        if (parts.length >= 2) {
-            out.database = parts[0];
-            out.table = parts[1];
-        }
-
-        const hp = out.host.split('.');
-        if (hp.length >= 4) {
-            out.region = hp[0];
-            out.edge = hp[1];
-        }
-
-        if (Array.isArray(headersList)) {
-            const headers = {};
-            for (const h of headersList) {
-                const name = (h.name || '').toLowerCase();
-                if (
-                    name === 'content-type' ||
-                    name === 'accept' ||
-                    name === 'origin' ||
-                    name.startsWith('x-td-')
-                ) {
-                    headers[name] = h.value;
-                }
-            }
-            if (Object.keys(headers).length) out.headers = headers;
-        }
-    } catch {
-        // Invalid URL
+    const parts = out.pathname.replace(/^\/+/, '').split('/');
+    if (parts.length >= 2) {
+      out.database = parts[0];
+      out.table = parts[1];
     }
-    return out;
+
+    const hp = out.host.split('.');
+    if (hp.length >= 4) {
+      out.region = hp[0];
+      out.edge = hp[1];
+    }
+
+    if (Array.isArray(headersList)) {
+      const headers = {};
+      for (const h of headersList) {
+        const name = (h.name || '').toLowerCase();
+        if (
+          name === 'content-type' ||
+          name === 'accept' ||
+          name === 'origin' ||
+          name.startsWith('x-td-')
+        ) {
+          headers[name] = h.value;
+        }
+      }
+      if (Object.keys(headers).length) out.headers = headers;
+    }
+  } catch {
+    // Invalid URL
+  }
+  return out;
 }
 
 /**
@@ -83,12 +83,12 @@ export function extractTDInfo(url, headersList) {
  * @returns {boolean} True if matches TD hosts
  */
 export function isTDRequest(url, hosts) {
-    try {
-        const u = new URL(url);
-        return hosts.some((h) => u.host.endsWith(h));
-    } catch {
-        return false;
-    }
+  try {
+    const u = new URL(url);
+    return hosts.some((h) => u.host.endsWith(h));
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -97,10 +97,10 @@ export function isTDRequest(url, hosts) {
  * @returns {boolean} True if preflight
  */
 export function isPreflight(req) {
-    const method = req.request && req.request.method;
-    if (method !== 'OPTIONS') return false;
-    const hdrs = (req.request && req.request.headers) || [];
-    return hdrs.some((h) => (h.name || '').toLowerCase() === 'access-control-request-method');
+  const method = req.request && req.request.method;
+  if (method !== 'OPTIONS') return false;
+  const hdrs = (req.request && req.request.headers) || [];
+  return hdrs.some((h) => (h.name || '').toLowerCase() === 'access-control-request-method');
 }
 
 /**
@@ -110,7 +110,7 @@ export function isPreflight(req) {
  * @returns {object} Merged object
  */
 export function mergeParsed(a, b) {
-    if (!a || typeof a !== 'object') return b || {};
-    if (!b || typeof b !== 'object') return a;
-    return { ...a, ...b };
+  if (!a || typeof a !== 'object') return b || {};
+  if (!b || typeof b !== 'object') return a;
+  return { ...a, ...b };
 }

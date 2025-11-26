@@ -13,12 +13,12 @@ Access settings by clicking the **Gear Icon** (⚙️) in the top right corner.
 
 ### General Settings
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **TD Hosts** | Comma-separated list of domains to capture. Supports wildcards. | `treasuredata.com` |
-| **Show Non-TD** | Capture requests that don't match TD Hosts (useful for debugging). | `Off` |
-| **Show Preflight** | Display CORS `OPTIONS` requests. | `Off` |
-| **Dark Mode** | Toggle between Light, Dark, or System theme. | `System` |
+| Setting            | Description                                                        | Default            |
+| ------------------ | ------------------------------------------------------------------ | ------------------ |
+| **TD Hosts**       | Comma-separated list of domains to capture. Supports wildcards.    | `treasuredata.com` |
+| **Show Non-TD**    | Capture requests that don't match TD Hosts (useful for debugging). | `Off`              |
+| **Show Preflight** | Display CORS `OPTIONS` requests.                                   | `Off`              |
+| **Dark Mode**      | Toggle between Light, Dark, or System theme.                       | `System`           |
 
 ---
 
@@ -27,11 +27,14 @@ Access settings by clicking the **Gear Icon** (⚙️) in the top right corner.
 The extension uses "Extractors" to parse the raw request body into a readable format. While it comes with built-in extractors for standard TD SDKs, you can add custom ones.
 
 ### Extractor Logic
+
 An extractor is a JavaScript object with two functions:
+
 1. `match(request)`: Returns `true` if this extractor should handle the request.
 2. `extract(request)`: Returns the parsed data object.
 
 ### Adding Custom Extractors
+
 Edit the `extension/custom-extractors.js` file. This file is preserved during updates if you keep your local copy.
 
 ```javascript
@@ -43,9 +46,9 @@ export const myCustomExtractor = {
     return {
       database: body.db_name,
       table: body.table_name,
-      events: body.payload
+      events: body.payload,
     };
-  }
+  },
 };
 ```
 
@@ -56,8 +59,9 @@ export const myCustomExtractor = {
 Protect sensitive data by configuring redaction rules. These rules are applied to the "Parsed Payload" view.
 
 ### Managing Rules
+
 1. Open **Settings**.
-2. Click **Manage### Custom Redaction Rules
+2. Click \*\*Manage### Custom Redaction Rules
 
 You can add your own custom rules to redact specific data patterns.
 **Note:** Rules are applied to the **values** of the parsed payload, not the raw JSON string.
@@ -68,15 +72,19 @@ Enter one Regular Expression (Regex) per line.
 **Examples:**
 
 1.  **Redact specific ID formats:**
+
     ```regex
     \buser_\d{5}\b
     ```
+
     Matches values like `user_12345`.
 
 2.  **Redact internal project codes:**
+
     ```regex
     PROJ-[A-Z]{3}-\d{4}
     ```
+
     Matches values like `PROJ-ABC-2024`.
 
 3.  **Redact specific tokens:**

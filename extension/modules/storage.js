@@ -8,21 +8,21 @@
  * @returns {Promise<Object>} Preferences object with all settings
  */
 export async function loadPrefs() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(
-            [
-                'tdHosts',
-                'showNonTD',
-                'showPreflight',
-                'customFields',
-                'redactionRules',
-                'filterPresets',
-                'tdFilter',
-                'tdRedact',
-            ],
-            (res) => resolve(res)
-        );
-    });
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(
+      [
+        'tdHosts',
+        'showNonTD',
+        'showPreflight',
+        'customFields',
+        'redactionRules',
+        'filterPresets',
+        'tdFilter',
+        'tdRedact',
+      ],
+      (res) => resolve(res)
+    );
+  });
 }
 
 /**
@@ -31,9 +31,9 @@ export async function loadPrefs() {
  * @returns {Promise<void>}
  */
 export async function savePrefs(prefs) {
-    return new Promise((resolve) => {
-        chrome.storage.sync.set(prefs, resolve);
-    });
+  return new Promise((resolve) => {
+    chrome.storage.sync.set(prefs, resolve);
+  });
 }
 
 /**
@@ -41,8 +41,8 @@ export async function savePrefs(prefs) {
  * @returns {Promise<Object>} Custom fields configuration
  */
 export async function loadCustomExtractors() {
-    const { customFields } = await loadPrefs();
-    return customFields || {};
+  const { customFields } = await loadPrefs();
+  return customFields || {};
 }
 
 /**
@@ -50,11 +50,11 @@ export async function loadCustomExtractors() {
  * @returns {Promise<string[]>} Array of redaction rule strings
  */
 export async function loadRedactionRules() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(['redactionRules'], (res) => {
-            resolve(res.redactionRules || []);
-        });
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['redactionRules'], (res) => {
+      resolve(res.redactionRules || []);
     });
+  });
 }
 
 /**
@@ -63,9 +63,9 @@ export async function loadRedactionRules() {
  * @returns {Promise<void>}
  */
 export async function saveRedactionRules(rules) {
-    return new Promise((resolve) => {
-        chrome.storage.sync.set({ redactionRules: rules }, resolve);
-    });
+  return new Promise((resolve) => {
+    chrome.storage.sync.set({ redactionRules: rules }, resolve);
+  });
 }
 
 /**
@@ -73,11 +73,11 @@ export async function saveRedactionRules(rules) {
  * @returns {Promise<Object>} Filter presets object
  */
 export async function loadFilterPresets() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(['filterPresets'], (res) => {
-            resolve(res.filterPresets || {});
-        });
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['filterPresets'], (res) => {
+      resolve(res.filterPresets || {});
     });
+  });
 }
 
 /**
@@ -86,7 +86,7 @@ export async function loadFilterPresets() {
  * @returns {Promise<void>}
  */
 export async function saveFilterPresets(presets) {
-    return new Promise((resolve) => {
-        chrome.storage.sync.set({ filterPresets: presets }, resolve);
-    });
+  return new Promise((resolve) => {
+    chrome.storage.sync.set({ filterPresets: presets }, resolve);
+  });
 }

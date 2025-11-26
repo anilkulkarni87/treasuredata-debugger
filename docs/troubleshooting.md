@@ -57,6 +57,7 @@ Common issues and solutions for the Treasure Data Debugger.
 ## Still stuck?
 
 If you've tried these steps and still have issues, please [open an issue on GitHub](https://github.com/anilkulkarni87/treasuredata-debugger/issues) with:
+
 1. Your browser version
 2. Extension version
 3. Steps to reproduce the problem
