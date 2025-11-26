@@ -5,7 +5,7 @@
   
   <p><strong>Modern Chrome DevTools Extension for Treasure Data Request Debugging</strong></p>
 
-[![CI](https://github.com/anilkulkarni87/treasuredata-debugger/workflows/CI/badge.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/actions)
+[![CI](https://github.com/anilkulkarni87/treasuredata-debugger/actions/workflows/ci.yml/badge.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-3.1.3-blue.svg)](https://github.com/anilkulkarni87/treasuredata-debugger/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 

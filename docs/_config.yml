@@ -1,42 +1,9 @@
 title: Treasure Data Debugger
 description: Modern Chrome DevTools extension for debugging Treasure Data requests
-theme: jekyll-theme-cayman
-baseurl: /treasuredata-debugger
-url: https://anilkulkarni87.github.io
-
-# Navigation
-navigation:
-  - title: Home
-    url: /
-  - title: Getting Started
-    url: /getting-started
-  - title: Features
-    url: /features
-  - title: Configuration
-    url: /configuration
-  - title: Development
-    url: /development
-  - title: API Reference
-    url: /api
-
-# Plugins
-plugins:
-  - jekyll-relative-links
-  - jekyll-seo-tag
-  - jekyll-optional-front-matter
-
-# Settings
-markdown: kramdown
-highlighter: rouge
-kramdown:
-  input: GFM
-  syntax_highlighter: rouge
-
 # Exclude from processing
 exclude:
   - node_modules
   - vendor
-  - '*.html'
 
 # Include
 include:

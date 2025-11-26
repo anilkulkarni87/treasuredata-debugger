@@ -13,47 +13,74 @@ A powerful, privacy-first Chrome/Edge DevTools panel for inspecting and debuggin
 
 ## ✨ Key Features
 
-### 🔍 **Advanced Request Capture**
+![Main Interface](assets/screenshots/main-interface.png)
 
-- Automatic detection of Treasure Data requests
-- Support for multiple TD regions and shards
-- CORS preflight handling
-- Non-TD request filtering
+## ✨ Key Features
 
-### 🎯 **Smart Filtering**
+![Main Interface](assets/screenshots/main-interface.png)
 
-- Text and regex search
-- Status code filtering (2xx, 3xx, 4xx, 5xx)
-- Database-specific filtering
-- Saveable filter presets with sync
-
-### 🔄 **Request Comparison**
-
-- Side-by-side request comparison
-- Automatic difference detection
-- Headers and payload comparison
-- Visual diff indicators
-
-### 📊 **Data Export**
-
-- CSV export for analysis
-- JSON export for processing
-- Filtered export support
-- Batch operations
-
-### 🔒 **Privacy & Security**
-
-- 100% local processing
-- No telemetry or tracking
-- Authorization header masking
-- PII redaction (built-in + custom rules)
-
-### ⚡ **Performance**
-
-- Pagination for large datasets
-- Optimized rendering
-- Efficient filtering
-- Minimal memory footprint
+<div class="features-grid">
+    <div class="feature-card">
+        <span class="feature-icon">🔍</span>
+        <h3>Advanced Request Capture</h3>
+        <ul>
+            <li>Automatic detection of Treasure Data requests</li>
+            <li>Support for multiple TD regions and shards</li>
+            <li>CORS preflight handling</li>
+            <li>Non-TD request filtering</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <span class="feature-icon">🎯</span>
+        <h3>Smart Filtering</h3>
+        <ul>
+            <li>Text and regex search</li>
+            <li>Status code filtering (2xx, 3xx, 4xx, 5xx)</li>
+            <li>Database-specific filtering</li>
+            <li>Saveable filter presets with sync</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <span class="feature-icon">🔄</span>
+        <h3>Request Comparison</h3>
+        <ul>
+            <li>Side-by-side request comparison</li>
+            <li>Automatic difference detection</li>
+            <li>Headers and payload comparison</li>
+            <li>Visual diff indicators</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <h3>Data Export</h3>
+        <ul>
+            <li>CSV export for analysis</li>
+            <li>JSON export for processing</li>
+            <li>Filtered export support</li>
+            <li>Batch operations</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <span class="feature-icon">🔒</span>
+        <h3>Privacy & Security</h3>
+        <ul>
+            <li>100% local processing</li>
+            <li>No telemetry or tracking</li>
+            <li>Authorization header masking</li>
+            <li>PII redaction (built-in + custom rules)</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <span class="feature-icon">⚡</span>
+        <h3>Performance</h3>
+        <ul>
+            <li>Pagination for large datasets</li>
+            <li>Optimized rendering</li>
+            <li>Efficient filtering</li>
+            <li>Minimal memory footprint</li>
+        </ul>
+    </div>
+</div>
 
 ---
 

@@ -5,7 +5,7 @@
 
 /**
  * Load all preferences from Chrome storage
- * @returns {Promise<Object>} Preferences object with all settings
+ * @returns {Promise<object>} Preferences object with all settings
  */
 export async function loadPrefs() {
   return new Promise((resolve) => {
@@ -27,22 +27,33 @@ export async function loadPrefs() {
 
 /**
  * Save preferences to Chrome storage
- * @param {Object} prefs - Preferences object to save
+ * @param {object} prefs - Preferences object to save
  * @returns {Promise<void>}
  */
 export async function savePrefs(prefs) {
   return new Promise((resolve) => {
-    chrome.storage.sync.set(prefs, resolve);
+    chrome.storage.sync.set(prefs, () => {
+      resolve();
+    });
   });
 }
 
 /**
  * Load custom extractor fields from storage
- * @returns {Promise<Object>} Custom fields configuration
+ * @returns {Promise<object>} Custom fields configuration
  */
 export async function loadCustomExtractors() {
   const { customFields } = await loadPrefs();
   return customFields || {};
+}
+
+/**
+ * Save custom extractor fields to storage
+ * @param {object} customFields - Custom fields object to save
+ * @returns {Promise<void>}
+ */
+export async function saveCustomExtractors(customFields) {
+  return savePrefs({ customFields });
 }
 
 /**
@@ -70,7 +81,7 @@ export async function saveRedactionRules(rules) {
 
 /**
  * Load filter presets from storage
- * @returns {Promise<Object>} Filter presets object
+ * @returns {Promise<object>} Filter presets object
  */
 export async function loadFilterPresets() {
   return new Promise((resolve) => {
@@ -82,7 +93,7 @@ export async function loadFilterPresets() {
 
 /**
  * Save filter presets to storage
- * @param {Object} presets - Filter presets object
+ * @param {object} presets - Filter presets object
  * @returns {Promise<void>}
  */
 export async function saveFilterPresets(presets) {
