@@ -8,6 +8,7 @@
  */
 
 import { defaultExtractors } from './parsers.js';
+import { entryMatchesFilter } from './modules/filtering.js';
 
 // Import modules
 import {
@@ -87,7 +88,6 @@ async function loadPrefsUI() {
   if (red) red.checked = !!prefs.tdRedact;
   state.tdRedact = !!prefs.tdRedact;
 
-  // Load redaction rules
   const rules = await loadRedactionRules();
   state.redactionRules = rules || [];
 }
@@ -139,7 +139,6 @@ function loadCustomFields() {
 async function parsePayload(contentType, rawText) {
   if (!rawText) return null;
 
-  // JSON
   if (isJsonLike(contentType)) {
     try {
       const bodyObj = JSON.parse(rawText);
@@ -161,7 +160,6 @@ async function parsePayload(contentType, rawText) {
     } catch {}
   }
 
-  // x-www-form-urlencoded
   if (contentType && contentType.includes('application/x-www-form-urlencoded')) {
     const params = new URLSearchParams(rawText);
     const obj = {};
@@ -189,7 +187,6 @@ async function parsePayload(contentType, rawText) {
     }
   }
 
-  // NDJSON / first-line JSON guess
   if (rawText.includes('\n')) {
     const first = rawText.split('\n').find((l) => l.trim().length) || '';
     try {
@@ -212,7 +209,6 @@ async function parsePayload(contentType, rawText) {
     } catch {}
   }
 
-  // fallback: trimmed string
   return rawText.length > 500 ? rawText.slice(0, 500) + ' …' : rawText;
 }
 
@@ -224,37 +220,11 @@ async function parsePayload(contentType, rawText) {
  * @returns {boolean} True if matches
  */
 function matchesFilter(entry, q) {
-  // Status filter
-  const statusFilter = $('statusFilter')?.value;
-  if (statusFilter) {
-    const status = String(entry.status);
-    if (statusFilter === '2xx' && !status.startsWith('2')) return false;
-    if (statusFilter === '3xx' && !status.startsWith('3')) return false;
-    if (statusFilter === '4xx' && !status.startsWith('4')) return false;
-    if (statusFilter === '5xx' && !status.startsWith('5')) return false;
-  }
+  const statusFilter = $('statusFilter')?.value || '';
+  const dbFilter = $('dbFilter')?.value || '';
+  const methodFilter = $('methodFilter')?.value || '';
 
-  // Database filter
-  const dbFilter = $('dbFilter')?.value;
-  if (dbFilter && entry.parsed?.database !== dbFilter) return false;
-
-  // Text/regex filter
-  if (!q) return true;
-
-  const hay = (entry.url + ' ' + JSON.stringify(entry.parsed)).toLowerCase();
-  const isRegex = $('regexFilter')?.checked;
-
-  if (isRegex) {
-    try {
-      const re = new RegExp(q, 'i');
-      return re.test(hay);
-    } catch {
-      // Invalid regex - fail silently, user will see no results
-      return false;
-    }
-  }
-
-  return hay.includes(q.toLowerCase());
+  return entryMatchesFilter(entry, q, { statusFilter, dbFilter, methodFilter });
 }
 
 /**
@@ -278,7 +248,6 @@ async function appendRow(entry) {
 
   const frag = tpl.content.cloneNode(true);
 
-  // Set checkbox data
   const checkbox = frag.querySelector('.compare-checkbox');
   if (checkbox) {
     checkbox.dataset.idx = entry.idx;
@@ -307,7 +276,6 @@ async function appendRow(entry) {
     cell.appendChild(pre);
   }
 
-  // Add headers button
   const headersCell = frag.querySelector('.headers-cell');
   if (headersCell && (entry.requestHeaders || entry.responseHeaders)) {
     const headersBtn = document.createElement('button');
@@ -327,12 +295,10 @@ async function renderTable() {
   const q = filterInput ? filterInput.value.trim() : '';
   const filtered = state.entries.filter((e) => matchesFilter(e, q));
 
-  // Performance: Pagination
   const start = state.currentPage * state.maxVisible;
   const end = start + state.maxVisible;
   const visible = filtered.slice(start, end);
 
-  // Show pagination info
   const paginationInfo = $('paginationInfo');
   if (paginationInfo) {
     if (filtered.length > state.maxVisible) {
@@ -344,7 +310,6 @@ async function renderTable() {
     }
   }
 
-  // Update pagination buttons
   const prevBtn = $('prevPage');
   const nextBtn = $('nextPage');
   if (prevBtn) prevBtn.disabled = state.currentPage === 0;
@@ -356,7 +321,6 @@ async function renderTable() {
 }
 
 // ---------- network capture ----------
-// Use network module to attach listener
 function setupNetworkCapture() {
   attachNetworkListener(
     state,
@@ -364,7 +328,6 @@ function setupNetworkCapture() {
     async (entry) => {
       state.entries.push(entry);
 
-      // Add to flow visualization
       if (flowViz) {
         flowViz.addRequest(entry);
       }
@@ -373,7 +336,7 @@ function setupNetworkCapture() {
       updateDatabaseFilter(state.entries);
     },
     parsePayload
-  ); // Pass parsePayload function
+  );
 }
 
 // ---------- UI wiring ----------
@@ -407,11 +370,18 @@ function setupNetworkCapture() {
       renderTable();
     });
 
-  // Advanced filters
   const statusFilter = $('statusFilter');
   if (statusFilter) {
     statusFilter.addEventListener('change', () => {
-      state.currentPage = 0; // Reset to first page
+      state.currentPage = 0;
+      renderTable();
+    });
+  }
+
+  const methodFilter = $('methodFilter');
+  if (methodFilter) {
+    methodFilter.addEventListener('change', () => {
+      state.currentPage = 0;
       renderTable();
     });
   }
@@ -419,7 +389,7 @@ function setupNetworkCapture() {
   const dbFilter = $('dbFilter');
   if (dbFilter) {
     dbFilter.addEventListener('change', () => {
-      state.currentPage = 0; // Reset to first page
+      state.currentPage = 0;
       renderTable();
     });
   }
@@ -437,6 +407,7 @@ function setupNetworkCapture() {
       const filterInput = $('filter');
       if (filterInput) filterInput.value = '';
       if (statusFilter) statusFilter.value = '';
+      if (methodFilter) methodFilter.value = '';
       if (dbFilter) dbFilter.value = '';
       if (regexFilter) regexFilter.checked = false;
       state.currentPage = 0;
@@ -445,11 +416,9 @@ function setupNetworkCapture() {
     });
   }
 
-  // Filter presets
   const saveFilterPreset = $('saveFilterPreset');
   const filterPresets = $('filterPresets');
 
-  // Populate presets dropdown on load
   function updateFilterPresets() {
     chrome.storage.sync.get(['filterPresets'], (res) => {
       const presets = res.filterPresets || {};
@@ -467,7 +436,6 @@ function setupNetworkCapture() {
     });
   }
 
-  // Save current filter state as preset
   if (saveFilterPreset) {
     saveFilterPreset.addEventListener('click', () => {
       const name = prompt('Enter preset name:');
@@ -476,6 +444,7 @@ function setupNetworkCapture() {
       const preset = {
         text: $('filter')?.value || '',
         status: statusFilter?.value || '',
+        method: methodFilter?.value || '',
         database: dbFilter?.value || '',
         regex: $('regexFilter')?.checked || false,
       };
@@ -491,7 +460,6 @@ function setupNetworkCapture() {
     });
   }
 
-  // Load preset
   if (filterPresets) {
     filterPresets.addEventListener('change', (e) => {
       const name = e.target.value;
@@ -503,6 +471,7 @@ function setupNetworkCapture() {
           const filterInput = $('filter');
           if (filterInput) filterInput.value = preset.text || '';
           if (statusFilter) statusFilter.value = preset.status || '';
+          if (methodFilter) methodFilter.value = preset.method || '';
           if (dbFilter) dbFilter.value = preset.database || '';
           const regexCheckbox = $('regexFilter');
           if (regexCheckbox) regexCheckbox.checked = preset.regex || false;
@@ -511,13 +480,11 @@ function setupNetworkCapture() {
           renderTable();
           showToast(`Loaded filter preset: ${name}`, 'success');
 
-          // Reset dropdown
           filterPresets.value = '';
         }
       });
     });
 
-    // Right-click to delete preset
     filterPresets.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       const name = filterPresets.value;
@@ -538,7 +505,6 @@ function setupNetworkCapture() {
       }
     });
 
-    // Initialize presets dropdown
     updateFilterPresets();
   }
 
@@ -594,7 +560,6 @@ function setupNetworkCapture() {
       URL.revokeObjectURL(a.href);
     });
 
-  // JSON export
   const exportJsonBtn = $('exportJson');
   if (exportJsonBtn) {
     exportJsonBtn.addEventListener('click', () => {
@@ -612,7 +577,6 @@ function setupNetworkCapture() {
     });
   }
 
-  // Pagination controls
   const prevPage = $('prevPage');
   if (prevPage) {
     prevPage.addEventListener('click', () => {
@@ -641,13 +605,12 @@ function setupNetworkCapture() {
   if (pageSize) {
     pageSize.addEventListener('change', () => {
       state.maxVisible = parseInt(pageSize.value, 10);
-      state.currentPage = 0; // Reset to first page
+      state.currentPage = 0;
       renderTable();
     });
   }
 })();
 
-// Settings modal
 const settingsBtn = $('settingsBtn');
 const settingsModal = $('settingsModal');
 const settingsJson = $('settingsJson');
@@ -678,22 +641,18 @@ if (settingsBtn && settingsModal && settingsJson && settingsCancel && settingsSa
     try {
       const text = settingsJson.value.trim();
 
-      // Validate not empty
       if (!text) {
         showToast('Settings cannot be empty', 'error');
         return;
       }
 
-      // Parse JSON
       const obj = JSON.parse(text);
 
-      // Validate is object
       if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
         showToast('Settings must be a valid object', 'error');
         return;
       }
 
-      // Save
       chrome.storage.sync.set({ customFields: obj }, () => {
         closeSettings();
         showToast('Settings saved successfully', 'success');
@@ -705,7 +664,6 @@ if (settingsBtn && settingsModal && settingsJson && settingsCancel && settingsSa
   });
 }
 
-// Redaction modal
 const importBtn = $('importBtn');
 const importFileInput = $('importFile');
 const exportBtn = $('exportBtn');
@@ -744,11 +702,11 @@ if (importBtn && importFileInput) {
 }
 
 if (openRedactLink && redactModal && redactArea && redactCancelBtn && redactSaveBtn) {
-  const redactBtn = openRedactLink; // Assuming openRedactLink is the button to open the modal
+  const redactBtn = openRedactLink;
   const redactCloseBtn = $('redactCloseBtn');
 
   redactBtn.addEventListener('click', (e) => {
-    e.preventDefault(); // Prevent default link behavior if it's an anchor
+    e.preventDefault();
     chrome.storage.sync.get('redactionRules', (res) => {
       const rules = res.redactionRules || [];
       redactArea.value = rules.join('\n');
@@ -765,7 +723,6 @@ if (openRedactLink && redactModal && redactArea && redactCancelBtn && redactSave
   redactCancelBtn.addEventListener('click', closeRedact);
   if (redactCloseBtn) redactCloseBtn.addEventListener('click', closeRedact);
 
-  // Click outside to close
   redactModal.addEventListener('click', (e) => {
     if (e.target === redactModal) closeRedact();
   });
@@ -812,11 +769,6 @@ if (exportBtn) {
   });
 }
 
-// ---------- headers modal ----------
-/**
- * Show headers modal for an entry
- * @param {Entry} entry - Entry with headers
- */
 function showHeadersModal(entry) {
   const modal = $('headersModal');
   if (!modal) return;
@@ -824,7 +776,6 @@ function showHeadersModal(entry) {
   const reqHeaders = $('requestHeadersList');
   const respHeaders = $('responseHeadersList');
 
-  // Populate request headers
   if (reqHeaders) {
     reqHeaders.innerHTML = '';
     const headers = entry.requestHeaders || [];
@@ -839,13 +790,10 @@ function showHeadersModal(entry) {
         }
         let value = h.value;
 
-        // Apply redaction if enabled
         if (state.tdRedact) {
-          // 1. Built-in Authorization masking
           if (h.name.toLowerCase() === 'authorization') {
             value = maskAuthorization(value);
           }
-          // 2. Custom redaction rules (apply to all headers)
           if (state.redactionRules && state.redactionRules.length > 0) {
             value = redactPII(value, state.redactionRules);
           }
@@ -857,7 +805,6 @@ function showHeadersModal(entry) {
     }
   }
 
-  // Populate response headers
   if (respHeaders) {
     respHeaders.innerHTML = '';
     const headers = entry.responseHeaders || [];
@@ -872,13 +819,10 @@ function showHeadersModal(entry) {
         }
         let value = h.value;
 
-        // Apply redaction if enabled
         if (state.tdRedact) {
-          // 1. Built-in Authorization masking
           if (h.name.toLowerCase() === 'authorization') {
             value = maskAuthorization(value);
           }
-          // 2. Custom redaction rules (apply to all headers)
           if (state.redactionRules && state.redactionRules.length > 0) {
             value = redactPII(value, state.redactionRules);
           }
@@ -890,11 +834,9 @@ function showHeadersModal(entry) {
     }
   }
 
-  // Show modal
   modal.classList.add('show');
   modal.style.display = 'flex';
 
-  // Wire up close buttons
   const closeBtnFooter = $('headersClose');
   if (closeBtnFooter) {
     closeBtnFooter.onclick = () => {
@@ -911,15 +853,6 @@ function showHeadersModal(entry) {
     };
   }
 
-  // Click outside to close
-  modal.onclick = (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-    }
-  };
-
-  // Click outside to close
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.classList.remove('show');
@@ -928,11 +861,6 @@ function showHeadersModal(entry) {
   };
 }
 
-/**
- * Check if header is important (CORS, Auth, Cache)
- * @param {string} name - Header name
- * @returns {boolean} True if important
- */
 function isImportantHeader(name) {
   const important = [
     'authorization',
@@ -948,10 +876,6 @@ function isImportantHeader(name) {
   return important.includes(name.toLowerCase());
 }
 
-// ---------- comparison feature ----------
-/**
- * Update compare button state based on selected checkboxes
- */
 function updateCompareButton() {
   const checkboxes = document.querySelectorAll('.compare-checkbox:checked');
   const compareBtn = $('compareBtn');
@@ -961,7 +885,6 @@ function updateCompareButton() {
   }
 }
 
-// Select all checkbox
 const selectAll = $('selectAll');
 if (selectAll) {
   selectAll.addEventListener('change', (e) => {
@@ -973,12 +896,10 @@ if (selectAll) {
   });
 }
 
-// Listen for checkbox changes (delegated event)
 document.addEventListener('change', (e) => {
   if (e.target.classList.contains('compare-checkbox')) {
     updateCompareButton();
 
-    // Update select-all state
     const allCheckboxes = document.querySelectorAll('.compare-checkbox');
     const checkedCheckboxes = document.querySelectorAll('.compare-checkbox:checked');
     const selectAllCheckbox = $('selectAll');
@@ -991,7 +912,6 @@ document.addEventListener('change', (e) => {
   }
 });
 
-// Compare button
 const compareBtn = $('compareBtn');
 if (compareBtn) {
   compareBtn.addEventListener('click', () => {
@@ -1017,16 +937,10 @@ if (compareBtn) {
   });
 }
 
-/**
- * Show comparison modal with two entries side-by-side
- * @param {Entry} entry1 - First entry
- * @param {Entry} entry2 - Second entry
- */
 function showComparisonModal(entry1, entry2) {
   const modal = $('comparisonModal');
   if (!modal) return;
 
-  // Populate entry 1
   const comp1Idx = $('comp1Idx');
   const comp1Method = $('comp1Method');
   const comp1Status = $('comp1Status');
@@ -1065,7 +979,6 @@ function showComparisonModal(entry1, entry2) {
     comp1Payload.textContent = JSON.stringify(payload, null, 2);
   }
 
-  // Populate entry 2
   const comp2Idx = $('comp2Idx');
   const comp2Method = $('comp2Method');
   const comp2Status = $('comp2Status');
@@ -1104,7 +1017,6 @@ function showComparisonModal(entry1, entry2) {
     comp2Payload.textContent = JSON.stringify(payload, null, 2);
   }
 
-  // Detect differences
   highlightDiff(comp1Payload, comp2Payload);
   const differences = [];
   if (entry1.method !== entry2.method) differences.push('Method differs');
@@ -1115,7 +1027,6 @@ function showComparisonModal(entry1, entry2) {
   const payload2Str = JSON.stringify(entry2.parsed);
   if (payload1Str !== payload2Str) differences.push('Payload differs');
 
-  // Show difference indicator
   const diffIndicator = $('compDiffIndicator');
   const diffList = $('compDiffList');
   if (diffIndicator && diffList) {
@@ -1132,11 +1043,9 @@ function showComparisonModal(entry1, entry2) {
     }
   }
 
-  // Show modal
   modal.classList.add('show');
   modal.style.display = 'flex';
 
-  // Close button
   const closeBtn = modal.querySelector('.modal-close');
   if (closeBtn) {
     closeBtn.onclick = () => {
@@ -1145,7 +1054,6 @@ function showComparisonModal(entry1, entry2) {
     };
   }
 
-  // Click outside to close
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.classList.remove('show');
@@ -1154,17 +1062,10 @@ function showComparisonModal(entry1, entry2) {
   };
 }
 
-/**
- * Highlight differences between two elements (placeholder)
- * @param {HTMLElement} el1
- * @param {HTMLElement} el2
- */
 function highlightDiff(el1, el2) {
-  // Placeholder for future visual diff implementation
-  // Currently handled by the summary list below
+  // placeholder for future visual diff implementation
 }
 
-// ---------- keyboard navigation ----------
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const settingsModal = $('settingsModal');
@@ -1192,15 +1093,7 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ---------- toast notifications ----------
-/**
- * Show a toast notification
- * @param {string} message - Message to display
- * @param {string} type - Toast type: 'success', 'error', 'info', 'warning'
- * @param {number} duration - Duration in ms (default: 3000)
- */
 function showToast(message, type = 'info', duration = 3000) {
-  // Create container if it doesn't exist
   let container = $('toastContainer');
   if (!container) {
     container = document.createElement('div');
@@ -1210,7 +1103,7 @@ function showToast(message, type = 'info', duration = 3000) {
   }
 
   const toast = document.createElement('div');
-  toast.className = `toast toast - ${type} `;
+  toast.className = `toast toast-${type}`;
   toast.textContent = message;
   toast.setAttribute('role', 'alert');
   toast.setAttribute('aria-live', 'polite');
@@ -1229,12 +1122,6 @@ function showToast(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
-// ---------- input validation ----------
-/**
- * Validate redaction rules
- * @param {string} text - Redaction rules text
- * @returns {{valid: boolean, errors: string[], lines: string[]}}
- */
 function validateRedactionRules(text) {
   const lines = text
     .split('\n')
@@ -1253,13 +1140,11 @@ function validateRedactionRules(text) {
   return { valid: errors.length === 0, errors, lines };
 }
 
-// ---------- init ----------
 loadPrefs();
 loadCustomExtractors();
 loadPrefsUI();
 setupNetworkCapture();
 
-// Initialize flow visualization
 let flowViz = null;
 try {
   flowViz = new FlowVisualization('flowCanvas');
@@ -1268,7 +1153,6 @@ try {
   console.error('Failed to initialize flow visualization:', error);
 }
 
-// Toggle flow visualization
 const toggleFlowVizBtn = $('toggleFlowViz');
 const flowVizContainer = $('flowVizContainer');
 if (toggleFlowVizBtn && flowVizContainer) {
